@@ -6,7 +6,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 
 - **Stage 0** — project scaffold (CMake, directory layout, CLI help)
 - **Stage 1** — v1 language specification complete
-- **Next** — Stage 2 lexer
+- **Stage 2** — lexer complete (`causis tokenize`)
+- **Next** — Stage 3 parser
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 

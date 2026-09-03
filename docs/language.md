@@ -138,21 +138,13 @@ true
 false
 ```
 
-The core simulation features only require integers and booleans.
+**Integers** are used for grid dimensions, coordinates, distances, and
+arithmetic.
 
-Numbers:
+**Booleans** (`true` and `false`) are used in `if` conditions and come from
+built-in queries such as `obstacle_ahead()`.
 
-- integer literals are used for grid dimensions and coordinates
-- floating-point literals are not accepted, but most v1, simulation operations reject them semantically
-
-Strings:
-Currently strings are removed completely as no use
-- string literals are recognized for future diagnostics and metadata
-- v1 simulation operations do not require strings
-
-Booleans:
-
-- `true` and `false` can be used in conditions
+v1 does not support floating-point or string literals.
 
 ---
 
