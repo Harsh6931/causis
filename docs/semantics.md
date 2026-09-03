@@ -1,5 +1,7 @@
 # causis Semantics v1
 
+> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+
 This document defines what valid causis v1 programs mean at compile time and
 runtime.
 
@@ -261,13 +263,15 @@ A variable must be assigned before it is read.
 Variables may hold:
 
 ```text
-number
+integer
 boolean
-string
 ```
 
-v1 has dynamic value checking during semantic analysis where possible and at
-runtime where necessary.
+Arithmetic expressions produce integers. The `/` operator uses integer
+division (truncates toward zero).
+
+v1 has type checking during semantic analysis where possible and at runtime
+where necessary.
 
 ---
 
@@ -289,7 +293,7 @@ The compiler rejects:
 - unknown variable reads
 - unknown function calls
 - wrong built-in argument count
-- invalid argument kinds
+- invalid argument kinds (e.g. non-integer where an integer is required)
 - non-boolean `if` conditions
 
 ---
