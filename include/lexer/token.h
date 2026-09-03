@@ -46,6 +46,7 @@ enum class TokenType {
     GreaterEqual,
     Bang,  // !
 
+    Error,
     EndOfFile,  // EOF
 };
 

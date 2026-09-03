@@ -2,6 +2,7 @@
 
 namespace causis::lexer {
 
+    // useful when token dump CLI
 const char* token_type_name(TokenType type) {
     switch (type) {
     case TokenType::World:
@@ -68,6 +69,8 @@ const char* token_type_name(TokenType type) {
         return "GREATER_EQUAL";
     case TokenType::Bang:
         return "BANG";
+    case TokenType::Error:
+        return "ERROR";
     case TokenType::EndOfFile:
         return "END_OF_FILE";
     }
@@ -81,6 +84,8 @@ std::string format_token(const Token& token) {
         return std::string(name) + "(" + std::to_string(token.int_value) + ")";
     }
 
+    // eg = IDENTIFIER("ronny")         here not adding at + position as not needed and i can access it as (token.line)
+
     if (token.type == TokenType::Identifier) {
         return std::string(name) + "(" + token.lexeme + ")";
     }
@@ -89,3 +94,6 @@ std::string format_token(const Token& token) {
 }
 
 } // namespace causis::lexer
+
+
+// this file is for implementing utilities of token representation
