@@ -1,5 +1,7 @@
 # causis Grammar v1
 
+> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+
 This document defines the v1 grammar for causis source files.
 
 The grammar is written in an EBNF-like form. Literal keywords and punctuation
@@ -85,8 +87,6 @@ call                := primary ( "(" arguments? ")" )* ;
 arguments           := expression ( "," expression )* ;
 
 primary             := integer
-                     | float
-                     | string
                      | "true"
                      | "false"
                      | identifier
@@ -105,9 +105,6 @@ identifier_start    := letter | "_" ;
 identifier_part     := letter | digit | "_" ;
 
 integer             := digit+ ;
-float               := digit+ "." digit+ ;
-string              := '"' string_char* '"' ;
-string_char         := any character except '"' or newline ;
 
 letter              := "a"..."z" | "A"..."Z" ;
 digit               := "0"..."9" ;
