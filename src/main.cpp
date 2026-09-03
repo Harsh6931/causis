@@ -15,8 +15,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 0 provides the project scaffold and this help command.
-Compiler stages will be implemented incrementally.
+Stage 0-1 complete; lexer (Stage 2) next.
 )";
 
 void print_help() {
@@ -25,7 +24,7 @@ void print_help() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) { // argc= no of commands, argv= array of commands
     if (argc == 1) {
         print_help();
         return 0;

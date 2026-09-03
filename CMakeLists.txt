@@ -25,6 +25,28 @@ else()
     target_compile_options(causis PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+include(FetchContent)
+
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 enable_testing()
 
 add_test(NAME causis_help COMMAND causis --help)
+
+add_executable(lexer_smoke_test
+    tests/lexer/smoke_test.cpp
+)
+
+target_link_libraries(lexer_smoke_test
+    PRIVATE
+        GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(lexer_smoke_test)

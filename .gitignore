@@ -2,7 +2,8 @@ build/
 build-*/
 out/
 .cache/
-
+AGENTS.md
+PLAN.md
 *.user
 *.suo
 *.obj
