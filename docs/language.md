@@ -1,5 +1,7 @@
 # causis Language Specification v1
 
+> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+
 causis v1 is a small domain-specific language for describing deterministic
 2D grid simulations. A program declares one world, places simulation entities
 on the grid, and attaches behavior to robots that runs on each simulation tick.
@@ -128,14 +130,12 @@ world
 
 ## 6. Literals and Values
 
-v1 supports these literal values:
+v1 supports these literal types:
 
 ```causis
 10
-3.14
 true
 false
-"hello"
 ```
 
 The core simulation features only require integers and booleans.
@@ -143,11 +143,10 @@ The core simulation features only require integers and booleans.
 Numbers:
 
 - integer literals are used for grid dimensions and coordinates
-- floating-point literals are accepted by the lexer and parser, but most v1
-  simulation operations reject them semantically
+- floating-point literals are not accepted, but most v1, simulation operations reject them semantically
 
 Strings:
-
+Currently strings are removed completely as no use
 - string literals are recognized for future diagnostics and metadata
 - v1 simulation operations do not require strings
 
@@ -359,7 +358,7 @@ Rules:
 
 - variable names follow identifier rules
 - variables are scoped to the current behavior
-- v1 variables may hold numbers, booleans, or strings
+- v1 variables may hold integers or booleans
 - variables are not required for the first simulation examples
 
 ---
@@ -417,6 +416,9 @@ assignment =
 Assignment is right-associative.
 Other binary operators are left-associative.
 
+Arithmetic uses integers only. The `/` operator performs integer division
+(truncates toward zero).
+
 ---
 
 ## 14. Built-in Simulation Operations
@@ -458,7 +460,7 @@ collision()
 
 Rules:
 
-- `distance_to` takes exactly one target name and returns a number
+- `distance_to` takes exactly one target name and returns an integer
 - `obstacle_ahead` takes no arguments and returns a boolean
 - `collision` takes no arguments and returns a boolean
 
@@ -594,6 +596,8 @@ The following are not part of v1:
 - concurrency
 - random behavior
 - block comments
+- floating-point literals
+- string literals
 - 3D simulation
 - physics
 - networking
