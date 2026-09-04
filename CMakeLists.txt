@@ -56,12 +56,28 @@ else()
     target_compile_options(causis_parser PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_semantic STATIC
+    src/semantic/analyzer.cpp
+)
+
+target_link_libraries(causis_semantic
+    PUBLIC
+        causis_ast
+)
+
+if(MSVC)
+    target_compile_options(causis_semantic PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_semantic PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(causis
     src/main.cpp
 )
 
 target_link_libraries(causis
     PRIVATE
+        causis_semantic
         causis_parser
 )
 
@@ -110,5 +126,20 @@ gtest_discover_tests(lexer_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 gtest_discover_tests(parser_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(semantic_test
+    tests/semantic/semantic_test.cpp
+)
+
+target_link_libraries(semantic_test
+    PRIVATE
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(semantic_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
