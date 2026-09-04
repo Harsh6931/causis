@@ -9,7 +9,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 2** — lexer complete (`causis tokenize`)
 - **Stage 3** — parser + AST complete (`causis parse`)
 - **Stage 4** — semantic analysis complete (`causis semantic`)
-- **Next** — Stage 5 simulation model
+- **Stage 5** — simulation model complete (`causis_runtime` library + tests)
+- **Next** — Stage 6 simulation semantics
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 

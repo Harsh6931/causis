@@ -22,7 +22,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 4 complete; simulation model (Stage 5) next.
+Stage 5 complete; simulation semantics (Stage 6) next.
 )";
 
 void print_help() {
