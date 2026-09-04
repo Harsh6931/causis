@@ -93,6 +93,38 @@ behavior R {
     EXPECT_TRUE(call->arguments.empty());
 }
 
+TEST(ParserPrecedence, MultiplicationBeforeAddition) {
+    const std::string source = R"(
+behavior R {
+    every tick {
+        if 1 + 2 * 3 == 7 {
+            move_right();
+        }
+    }
+}
+)";
+
+    const causis::parser::ParseResult result = causis::parse_source(source);
+    ASSERT_FALSE(result.error.has_value());
+
+    const auto* behavior = dynamic_cast<const causis::ast::BehaviorDecl*>(result.program->declarations[0].get());
+    const auto* every_tick = behavior->event_blocks[0].get();
+    const auto* if_stmt = dynamic_cast<const causis::ast::IfStmt*>(every_tick->body->statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    const auto* equality = dynamic_cast<const causis::ast::BinaryExpr*>(if_stmt->condition.get());
+    ASSERT_NE(equality, nullptr);
+    EXPECT_EQ(equality->op, causis::lexer::TokenType::EqualEqual);
+
+    const auto* addition = dynamic_cast<const causis::ast::BinaryExpr*>(equality->left.get());
+    ASSERT_NE(addition, nullptr);
+    EXPECT_EQ(addition->op, causis::lexer::TokenType::Plus);
+
+    const auto* multiplication = dynamic_cast<const causis::ast::BinaryExpr*>(addition->right.get());
+    ASSERT_NE(multiplication, nullptr);
+    EXPECT_EQ(multiplication->op, causis::lexer::TokenType::Star);
+}
+
 TEST(ParserIf, ParsesIfElse) {
     const std::string source = R"(
 behavior R {
