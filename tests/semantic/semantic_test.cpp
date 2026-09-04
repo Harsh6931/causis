@@ -82,6 +82,16 @@ robot R at 1 1;
     EXPECT_NE(result.error->message.find("duplicate robot"), std::string::npos);
 }
 
+TEST(SemanticEntities, RejectsDuplicateTargetNames) {
+    const causis::semantic::SemanticResult result = causis::analyze_source(R"(
+world 5 5;
+target T at 1 1;
+target T at 2 2;
+)");
+    ASSERT_TRUE(result.error.has_value());
+    EXPECT_NE(result.error->message.find("duplicate target"), std::string::npos);
+}
+
 TEST(SemanticEntities, RejectsOverlappingEntities) {
     const causis::semantic::SemanticResult result = causis::analyze_source(R"(
 world 5 5;
@@ -112,6 +122,25 @@ behavior R {
 )");
     ASSERT_TRUE(result.error.has_value());
     EXPECT_NE(result.error->message.find("unknown robot"), std::string::npos);
+}
+
+TEST(SemanticBehavior, RejectsDuplicateBehaviorBlock) {
+    const causis::semantic::SemanticResult result = causis::analyze_source(R"(
+world 5 5;
+robot R at 0 0;
+behavior R {
+    every tick {
+        move_right();
+    }
+}
+behavior R {
+    every tick {
+        move_left();
+    }
+}
+)");
+    ASSERT_TRUE(result.error.has_value());
+    EXPECT_NE(result.error->message.find("already has a behavior block"), std::string::npos);
 }
 
 TEST(SemanticBehavior, RejectsUnknownTarget) {

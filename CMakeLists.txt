@@ -75,11 +75,18 @@ add_library(causis_runtime STATIC
     src/runtime/types.cpp
     src/runtime/world.cpp
     src/runtime/simulation.cpp
+    src/runtime/executor.cpp
+    src/runtime/program_runner.cpp
 )
 
 target_include_directories(causis_runtime
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(causis_runtime
+    PUBLIC
+        causis_ast
 )
 
 if(MSVC)
@@ -94,6 +101,7 @@ add_executable(causis
 
 target_link_libraries(causis
     PRIVATE
+        causis_runtime
         causis_semantic
         causis_parser
 )
@@ -172,5 +180,21 @@ target_link_libraries(simulation_test
 )
 
 gtest_discover_tests(simulation_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(program_runner_test
+    tests/runtime/program_runner_test.cpp
+)
+
+target_link_libraries(program_runner_test
+    PRIVATE
+        causis_runtime
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(program_runner_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
