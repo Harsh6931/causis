@@ -6,6 +6,7 @@
 #include "ast/ast.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "runtime/program_runner.h"
 #include "semantic/analyzer.h"
 
 namespace {
@@ -22,7 +23,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 5 complete; simulation semantics (Stage 6) next.
+Stage 6 complete; IR (Stage 7) next.
 )";
 
 void print_help() {
@@ -124,6 +125,54 @@ int run_semantic(const std::string& path) {
     return 0;
 }
 
+int run_simulation(const std::string& path, int tick_count) {
+    std::string source;
+    if (!read_source_file(path, source)) {
+        std::cerr << "causis: could not open file '" << path << "'\n";
+        return 1;
+    }
+
+    causis::lexer::Lexer lexer(source);
+    const causis::lexer::TokenizeResult lex_result = lexer.tokenize();
+    if (lex_result.error.has_value()) {
+        std::cerr << "Lexer error: " << lex_result.error->message << '\n';
+        return 1;
+    }
+
+    causis::parser::Parser parser(lex_result.tokens);
+    const causis::parser::ParseResult parse_result = parser.parse_program();
+    if (parse_result.error.has_value()) {
+        std::cerr << "Parse error: " << parse_result.error->message << " at line "
+                  << parse_result.error->line << ", column " << parse_result.error->column << '\n';
+        return 1;
+    }
+
+    causis::semantic::Analyzer analyzer;
+    const causis::semantic::SemanticResult semantic_result = analyzer.analyze(*parse_result.program);
+    if (semantic_result.error.has_value()) {
+        std::cerr << "Semantic error: " << semantic_result.error->message << " at line "
+                  << semantic_result.error->line << ", column " << semantic_result.error->column
+                  << '\n';
+        return 1;
+    }
+
+    const causis::runtime::RunResult run_result =
+        causis::runtime::run_program(*parse_result.program, tick_count);
+    if (run_result.error.has_value()) {
+        std::cerr << "Runtime error: " << run_result.error->message << " at line "
+                  << run_result.error->line << ", column " << run_result.error->column << '\n';
+        return 1;
+    }
+
+    if (!run_result.simulation.has_value()) {
+        std::cerr << "Runtime error: simulation did not run\n";
+        return 1;
+    }
+
+    std::cout << causis::runtime::format_run_summary(*run_result.simulation);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -153,6 +202,11 @@ int main(int argc, char* argv[]) {
 
     if (command == "semantic") {
         return run_semantic(argv[2]);
+    }
+
+    if (command == "run") {
+        constexpr int kDefaultTicks = 10;
+        return run_simulation(argv[2], kDefaultTicks);
     }
 
     std::cerr << "causis: unknown or unavailable command '" << command << "'\n";

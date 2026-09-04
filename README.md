@@ -10,7 +10,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 3** — parser + AST complete (`causis parse`)
 - **Stage 4** — semantic analysis complete (`causis semantic`)
 - **Stage 5** — simulation model complete (`causis_runtime` library + tests)
-- **Next** — Stage 6 simulation semantics
+- **Stage 6** — simulation semantics complete (`causis run` via interim AST interpreter; VM in Stages 7–10)
+- **Next** — Stage 7 IR
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 
@@ -63,6 +64,7 @@ ctest --test-dir build --output-on-failure
 ./build/causis.exe tokenize examples/basic_move.ls
 ./build/causis.exe parse examples/basic_move.ls
 ./build/causis.exe semantic examples/basic_move.ls
+./build/causis.exe run examples/basic_move.ls
 ```
 
 In PowerShell:
