@@ -26,13 +26,43 @@ else()
     target_compile_options(causis_lexer PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_ast STATIC
+    src/ast/ast_printer.cpp
+)
+
+target_link_libraries(causis_ast
+    PUBLIC
+        causis_lexer
+)
+
+if(MSVC)
+    target_compile_options(causis_ast PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_ast PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_library(causis_parser STATIC
+    src/parser/parser.cpp
+)
+
+target_link_libraries(causis_parser
+    PUBLIC
+        causis_ast
+)
+
+if(MSVC)
+    target_compile_options(causis_parser PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_parser PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(causis
     src/main.cpp
 )
 
 target_link_libraries(causis
     PRIVATE
-        causis_lexer
+        causis_parser
 )
 
 if(MSVC)
@@ -65,7 +95,20 @@ target_link_libraries(lexer_test
         GTest::gtest_main
 )
 
+add_executable(parser_test
+    tests/parser/parser_test.cpp
+)
+
+target_link_libraries(parser_test
+    PRIVATE
+        causis_parser
+        GTest::gtest_main
+)
+
 include(GoogleTest)
 gtest_discover_tests(lexer_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+gtest_discover_tests(parser_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

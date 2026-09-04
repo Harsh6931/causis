@@ -1,9 +1,11 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 
+#include "ast/ast.h"
 #include "lexer/lexer.h"
+#include "parser/parser.h"
 
 namespace {
 
@@ -19,23 +21,31 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 2 complete; parser (Stage 3) next.
+Stage 3 complete; semantic analysis (Stage 4) next.
 )";
 
 void print_help() {
     std::cout << kHelpText;
 }
 
-int run_tokenize(const std::string& path) {
+bool read_source_file(const std::string& path, std::string& source) {
     std::ifstream file(path);
     if (!file) {
-        std::cerr << "causis: could not open file '" << path << "'\n";
-        return 1;
+        return false;
     }
 
     std::ostringstream buffer;
     buffer << file.rdbuf();
-    const std::string source = buffer.str();
+    source = buffer.str();
+    return true;
+}
+
+int run_tokenize(const std::string& path) {
+    std::string source;
+    if (!read_source_file(path, source)) {
+        std::cerr << "causis: could not open file '" << path << "'\n";
+        return 1;
+    }
 
     causis::lexer::Lexer lexer(source);
     const causis::lexer::TokenizeResult result = lexer.tokenize();
@@ -49,6 +59,32 @@ int run_tokenize(const std::string& path) {
         std::cout << causis::lexer::format_token(token) << '\n';
     }
 
+    return 0;
+}
+
+int run_parse(const std::string& path) {
+    std::string source;
+    if (!read_source_file(path, source)) {
+        std::cerr << "causis: could not open file '" << path << "'\n";
+        return 1;
+    }
+
+    causis::lexer::Lexer lexer(source);
+    const causis::lexer::TokenizeResult lex_result = lexer.tokenize();
+    if (lex_result.error.has_value()) {
+        std::cerr << "Lexer error: " << lex_result.error->message << '\n';
+        return 1;
+    }
+
+    causis::parser::Parser parser(lex_result.tokens);
+    const causis::parser::ParseResult parse_result = parser.parse_program();
+    if (parse_result.error.has_value()) {
+        std::cerr << "Parse error: " << parse_result.error->message << " at line "
+                  << parse_result.error->line << ", column " << parse_result.error->column << '\n';
+        return 1;
+    }
+
+    std::cout << causis::ast::print_program(*parse_result.program);
     return 0;
 }
 
@@ -66,12 +102,17 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (argc != 3) {
+        std::cerr << "causis: usage: causis " << command << " <program.ls>\n";
+        return 1;
+    }
+
     if (command == "tokenize") {
-        if (argc != 3) {
-            std::cerr << "causis: usage: causis tokenize <program.ls>\n";
-            return 1;
-        }
         return run_tokenize(argv[2]);
+    }
+
+    if (command == "parse") {
+        return run_parse(argv[2]);
     }
 
     std::cerr << "causis: unknown or unavailable command '" << command << "'\n";

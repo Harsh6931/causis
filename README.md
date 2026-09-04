@@ -7,7 +7,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 0** — project scaffold (CMake, directory layout, CLI help)
 - **Stage 1** — v1 language specification complete
 - **Stage 2** — lexer complete (`causis tokenize`)
-- **Next** — Stage 3 parser
+- **Stage 3** — parser + AST complete (`causis parse`)
+- **Next** — Stage 4 semantic analysis
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 
@@ -57,6 +58,8 @@ ctest --test-dir build --output-on-failure
 
 ```sh
 ./build/causis.exe --help
+./build/causis.exe tokenize examples/basic_move.ls
+./build/causis.exe parse examples/basic_move.ls
 ```
 
 In PowerShell:
