@@ -39,6 +39,7 @@ enum class Opcode {
   LoadAgent,  // select which robot runs the following behavior body
   BeginTick,  // start one global simulation tick (clear all collision flags)
   EndTick,    // finish that tick (increment global tick counter once)
+  Stop,       // end current robot's tick body at runtime (lowering pairs with JUMP)
 
   MoveUp,
   MoveDown,
@@ -48,7 +49,6 @@ enum class Opcode {
   MoveToward,
   TurnLeft,
   TurnRight,
-  Stop,
 
   DistanceTo,
   ObstacleAhead,
