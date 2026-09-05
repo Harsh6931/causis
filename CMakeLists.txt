@@ -95,12 +95,30 @@ else()
     target_compile_options(causis_runtime PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_ir STATIC
+    src/ir/ir.cpp
+    src/ir/builder.cpp
+    src/ir/lower.cpp
+)
+
+target_link_libraries(causis_ir
+    PUBLIC
+        causis_ast
+)
+
+if(MSVC)
+    target_compile_options(causis_ir PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_ir PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(causis
     src/main.cpp
 )
 
 target_link_libraries(causis
     PRIVATE
+        causis_ir
         causis_runtime
         causis_semantic
         causis_parser
@@ -196,5 +214,21 @@ target_link_libraries(program_runner_test
 )
 
 gtest_discover_tests(program_runner_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(ir_test
+    tests/ir/ir_test.cpp
+)
+
+target_link_libraries(ir_test
+    PRIVATE
+        causis_ir
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(ir_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
