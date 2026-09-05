@@ -6,6 +6,8 @@
 
 namespace causis::ir {
 
+
+  // IR instruction generator
 class IrBuilder {
 public:
   IrProgram build();

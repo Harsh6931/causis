@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ast/ast.h"
+#include "ir/lower.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "runtime/program_runner.h"
@@ -23,7 +24,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 6 complete; IR (Stage 7) next.
+Stage 7 complete; optimizer (Stage 8) next.
 )";
 
 void print_help() {
@@ -173,6 +174,53 @@ int run_simulation(const std::string& path, int tick_count) {
     return 0;
 }
 
+int run_ir(const std::string& path) {
+    std::string source;
+    if (!read_source_file(path, source)) {
+        std::cerr << "causis: could not open file '" << path << "'\n";
+        return 1;
+    }
+
+    causis::lexer::Lexer lexer(source);
+    const causis::lexer::TokenizeResult lex_result = lexer.tokenize();
+    if (lex_result.error.has_value()) {
+        std::cerr << "Lexer error: " << lex_result.error->message << '\n';
+        return 1;
+    }
+
+    causis::parser::Parser parser(lex_result.tokens);
+    const causis::parser::ParseResult parse_result = parser.parse_program();
+    if (parse_result.error.has_value()) {
+        std::cerr << "Parse error: " << parse_result.error->message << " at line "
+                  << parse_result.error->line << ", column " << parse_result.error->column << '\n';
+        return 1;
+    }
+
+    causis::semantic::Analyzer analyzer;
+    const causis::semantic::SemanticResult semantic_result = analyzer.analyze(*parse_result.program);
+    if (semantic_result.error.has_value()) {
+        std::cerr << "Semantic error: " << semantic_result.error->message << " at line "
+                  << semantic_result.error->line << ", column " << semantic_result.error->column
+                  << '\n';
+        return 1;
+    }
+
+    const causis::ir::LowerResult lower_result = causis::ir::lower_program(*parse_result.program);
+    if (lower_result.error.has_value()) {
+        std::cerr << "IR lowering error: " << lower_result.error->message << " at line "
+                  << lower_result.error->line << ", column " << lower_result.error->column << '\n';
+        return 1;
+    }
+
+    if (!lower_result.program.has_value()) {
+        std::cerr << "IR lowering error: no program produced\n";
+        return 1;
+    }
+
+    std::cout << causis::ir::print_ir(*lower_result.program);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -207,6 +255,10 @@ int main(int argc, char* argv[]) {
     if (command == "run") {
         constexpr int kDefaultTicks = 10;
         return run_simulation(argv[2], kDefaultTicks);
+    }
+
+    if (command == "ir") {
+        return run_ir(argv[2]);
     }
 
     std::cerr << "causis: unknown or unavailable command '" << command << "'\n";
