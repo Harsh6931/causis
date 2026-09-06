@@ -13,7 +13,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 6** — simulation semantics complete (`causis run` via interim AST interpreter; VM in Stages 9–10)
 - **Stage 7** — IR complete (`causis ir`)
 - **Stage 8** — optimizer complete (`causis optimize`)
-- **Next** — Stage 9 bytecode
+- **Stage 9** — bytecode complete (`causis disassemble`)
+- **Next** — Stage 10 VM
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 
@@ -69,6 +70,7 @@ ctest --test-dir build --output-on-failure
 ./build/causis.exe run examples/basic_move.ls
 ./build/causis.exe ir examples/basic_move.ls
 ./build/causis.exe optimize examples/basic_move.ls
+./build/causis.exe disassemble examples/basic_move.ls
 ```
 
 In PowerShell:

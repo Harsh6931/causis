@@ -113,12 +113,30 @@ else()
     target_compile_options(causis_ir PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_bytecode STATIC
+    src/bytecode/bytecode.cpp
+    src/bytecode/compiler.cpp
+    src/bytecode/disassembler.cpp
+)
+
+target_link_libraries(causis_bytecode
+    PUBLIC
+        causis_ir
+)
+
+if(MSVC)
+    target_compile_options(causis_bytecode PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_bytecode PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(causis
     src/main.cpp
 )
 
 target_link_libraries(causis
     PRIVATE
+        causis_bytecode
         causis_ir
         causis_runtime
         causis_semantic
@@ -247,5 +265,22 @@ target_link_libraries(optimizer_test
 )
 
 gtest_discover_tests(optimizer_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(bytecode_test
+    tests/bytecode/bytecode_test.cpp
+)
+
+target_link_libraries(bytecode_test
+    PRIVATE
+        causis_bytecode
+        causis_ir
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(bytecode_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

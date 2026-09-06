@@ -4,6 +4,8 @@
 #include <string>
 
 #include "ast/ast.h"
+#include "bytecode/compiler.h"
+#include "bytecode/disassembler.h"
 #include "ir/lower.h"
 #include "ir/optimizer.h"
 #include "lexer/lexer.h"
@@ -25,7 +27,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 8 complete; bytecode (Stage 9) next.
+Stage 9 complete; VM (Stage 10) next.
 )";
 
 void print_help() {
@@ -272,6 +274,69 @@ int run_optimize(const std::string& path) {
     return 0;
 }
 
+int run_disassemble(const std::string& path) {
+    std::string source;
+    if (!read_source_file(path, source)) {
+        std::cerr << "causis: could not open file '" << path << "'\n";
+        return 1;
+    }
+
+    causis::lexer::Lexer lexer(source);
+    const causis::lexer::TokenizeResult lex_result = lexer.tokenize();
+    if (lex_result.error.has_value()) {
+        std::cerr << "Lexer error: " << lex_result.error->message << '\n';
+        return 1;
+    }
+
+    causis::parser::Parser parser(lex_result.tokens);
+    const causis::parser::ParseResult parse_result = parser.parse_program();
+    if (parse_result.error.has_value()) {
+        std::cerr << "Parse error: " << parse_result.error->message << " at line "
+                  << parse_result.error->line << ", column " << parse_result.error->column << '\n';
+        return 1;
+    }
+
+    causis::semantic::Analyzer analyzer;
+    const causis::semantic::SemanticResult semantic_result = analyzer.analyze(*parse_result.program);
+    if (semantic_result.error.has_value()) {
+        std::cerr << "Semantic error: " << semantic_result.error->message << " at line "
+                  << semantic_result.error->line << ", column " << semantic_result.error->column
+                  << '\n';
+        return 1;
+    }
+
+    const causis::ir::LowerResult lower_result = causis::ir::lower_program(*parse_result.program);
+    if (lower_result.error.has_value()) {
+        std::cerr << "IR lowering error: " << lower_result.error->message << " at line "
+                  << lower_result.error->line << ", column " << lower_result.error->column << '\n';
+        return 1;
+    }
+
+    if (!lower_result.program.has_value()) {
+        std::cerr << "IR lowering error: no program produced\n";
+        return 1;
+    }
+
+    const causis::ir::IrProgram optimized =
+        causis::ir::optimize_program(*lower_result.program);
+    const causis::bytecode::CompileResult compile_result =
+        causis::bytecode::compile_ir(optimized);
+    if (compile_result.error.has_value()) {
+        std::cerr << "Bytecode compile error: " << compile_result.error->message << " at line "
+                  << compile_result.error->line << ", column " << compile_result.error->column
+                  << '\n';
+        return 1;
+    }
+
+    if (!compile_result.program.has_value()) {
+        std::cerr << "Bytecode compile error: no program produced\n";
+        return 1;
+    }
+
+    std::cout << causis::bytecode::disassemble_program(*compile_result.program);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -314,6 +379,10 @@ int main(int argc, char* argv[]) {
 
     if (command == "optimize") {
         return run_optimize(argv[2]);
+    }
+
+    if (command == "disassemble") {
+        return run_disassemble(argv[2]);
     }
 
     std::cerr << "causis: unknown or unavailable command '" << command << "'\n";
