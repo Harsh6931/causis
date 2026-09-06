@@ -99,6 +99,7 @@ add_library(causis_ir STATIC
     src/ir/ir.cpp
     src/ir/builder.cpp
     src/ir/lower.cpp
+    src/ir/optimizer.cpp
 )
 
 target_link_libraries(causis_ir
@@ -230,5 +231,21 @@ target_link_libraries(ir_test
 )
 
 gtest_discover_tests(ir_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(optimizer_test
+    tests/ir/optimizer_test.cpp
+)
+
+target_link_libraries(optimizer_test
+    PRIVATE
+        causis_ir
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(optimizer_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
