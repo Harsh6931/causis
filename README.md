@@ -15,7 +15,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 8** — optimizer complete (`causis optimize`)
 - **Stage 9** — bytecode complete (`causis disassemble`)
 - **Stage 10** — VM complete (`causis run` uses bytecode)
-- **Next** — Stage 12 static visualizer (Stage 11 CLI polish optional)
+- **Stage 11** — CLI complete (shared frontend loader, `--ticks` on `run`)
+- **Next** — Stage 12 static visualizer
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 
@@ -69,6 +70,7 @@ ctest --test-dir build --output-on-failure
 ./build/causis.exe parse examples/basic_move.ls
 ./build/causis.exe semantic examples/basic_move.ls
 ./build/causis.exe run examples/basic_move.ls
+./build/causis.exe run examples/basic_move.ls --ticks 3
 ./build/causis.exe ir examples/basic_move.ls
 ./build/causis.exe optimize examples/basic_move.ls
 ./build/causis.exe disassemble examples/basic_move.ls
