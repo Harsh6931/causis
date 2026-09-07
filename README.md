@@ -292,9 +292,9 @@ Open [visualizer/index.html](visualizer/index.html), load the JSON file, and use
 
 The simulation output can be viewed using the static 2D visualizer.
 
-![causis 2D visualization](images\starting_point.png)
-![causis 2D visualization](images\obstacle.png)
-![causis 2D visualization](images\target.png)
+![causis 2D visualization](images/starting_point.png)
+![causis 2D visualization](images/obstacle.png)
+![causis 2D visualization](images/target.png)
 
 
 ## Project structure
