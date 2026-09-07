@@ -290,7 +290,12 @@ Run a simulation with tick logging, then step through frames in the browser:
 
 Open [visualizer/index.html](visualizer/index.html), load the JSON file, and use **Next tick** to advance. When the robot reaches the target, it turns green, stepping stops, and a celebration popup appears.
 
-<!-- Screenshot: add visualizer output here -->
+The simulation output can be viewed using the static 2D visualizer.
+
+![causis 2D visualization](images\starting_point.png)
+![causis 2D visualization](images\obstacle.png)
+![causis 2D visualization](images\target.png)
+
 
 ## Project structure
 
