@@ -71,6 +71,21 @@ else()
     target_compile_options(causis_semantic PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_vm STATIC
+    src/vm/vm.cpp
+)
+
+target_link_libraries(causis_vm
+    PUBLIC
+        causis_bytecode
+)
+
+if(MSVC)
+    target_compile_options(causis_vm PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_vm PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_library(causis_runtime STATIC
     src/runtime/types.cpp
     src/runtime/world.cpp
@@ -87,6 +102,9 @@ target_include_directories(causis_runtime
 target_link_libraries(causis_runtime
     PUBLIC
         causis_ast
+        causis_vm
+        causis_ir
+        causis_bytecode
 )
 
 if(MSVC)
@@ -136,6 +154,7 @@ add_executable(causis
 
 target_link_libraries(causis
     PRIVATE
+        causis_vm
         causis_bytecode
         causis_ir
         causis_runtime
@@ -282,5 +301,24 @@ target_link_libraries(bytecode_test
 )
 
 gtest_discover_tests(bytecode_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(vm_test
+    tests/vm/vm_test.cpp
+)
+
+target_link_libraries(vm_test
+    PRIVATE
+        causis_vm
+        causis_runtime
+        causis_bytecode
+        causis_ir
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(vm_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

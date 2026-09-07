@@ -14,7 +14,8 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 7** — IR complete (`causis ir`)
 - **Stage 8** — optimizer complete (`causis optimize`)
 - **Stage 9** — bytecode complete (`causis disassemble`)
-- **Next** — Stage 10 VM
+- **Stage 10** — VM complete (`causis run` uses bytecode)
+- **Next** — Stage 12 static visualizer (Stage 11 CLI polish optional)
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 

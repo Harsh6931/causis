@@ -27,7 +27,7 @@ Usage:
   causis disassemble <program.ls>
   causis run <program.ls>
 
-Stage 9 complete; VM (Stage 10) next.
+Stage 10 complete; static visualizer (Stage 12) next.
 )";
 
 void print_help() {
