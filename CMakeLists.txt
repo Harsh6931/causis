@@ -148,12 +148,29 @@ else()
     target_compile_options(causis_bytecode PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(causis_cli STATIC
+    src/cli/frontend.cpp
+)
+
+target_link_libraries(causis_cli
+    PUBLIC
+        causis_semantic
+        causis_parser
+)
+
+if(MSVC)
+    target_compile_options(causis_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_cli PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(causis
     src/main.cpp
 )
 
 target_link_libraries(causis
     PRIVATE
+        causis_cli
         causis_vm
         causis_bytecode
         causis_ir
@@ -181,6 +198,15 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_test(NAME causis_help COMMAND causis --help)
+
+add_test(NAME causis_tokenize_basic COMMAND causis tokenize ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_parse_basic COMMAND causis parse ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_semantic_basic COMMAND causis semantic ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_ir_basic COMMAND causis ir ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_optimize_basic COMMAND causis optimize ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_disassemble_basic COMMAND causis disassemble ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
+add_test(NAME causis_run_target COMMAND causis run ${CMAKE_SOURCE_DIR}/examples/target.ls)
+add_test(NAME causis_run_ticks COMMAND causis run ${CMAKE_SOURCE_DIR}/examples/basic_move.ls --ticks 3)
 
 add_executable(lexer_test
     tests/lexer/lexer_test.cpp
@@ -320,5 +346,19 @@ target_link_libraries(vm_test
 )
 
 gtest_discover_tests(vm_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(cli_test
+    tests/cli/frontend_test.cpp
+)
+
+target_link_libraries(cli_test
+    PRIVATE
+        causis_cli
+        GTest::gtest_main
+)
+
+gtest_discover_tests(cli_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
