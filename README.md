@@ -1,97 +1,57 @@
 # causis
 
-causis is a domain-specific language and compiler for describing, running, and visualizing deterministic 2D grid-based simulations.
+A C++20-based domain-specific language, compiler, bytecode virtual machine, and simulation runtime for deterministic 2D grid simulations.
 
-## Current status
+## Overview
 
-- **Stage 0** — project scaffold (CMake, directory layout, CLI help)
-- **Stage 1** — v1 language specification complete
-- **Stage 2** — lexer complete (`causis tokenize`)
-- **Stage 3** — parser + AST complete (`causis parse`)
-- **Stage 4** — semantic analysis complete (`causis semantic`)
-- **Stage 5** — simulation model complete (`causis_runtime` library + tests)
-- **Stage 6** — simulation semantics complete (`causis run` via interim AST interpreter; VM in Stages 9–10)
-- **Stage 7** — IR complete (`causis ir`)
-- **Stage 8** — optimizer complete (`causis optimize`)
-- **Stage 9** — bytecode complete (`causis disassemble`)
-- **Stage 10** — VM complete (`causis run` uses bytecode)
-- **Stage 11** — CLI complete (shared frontend loader, `--ticks` on `run`)
-- **Stage 12** — static visualizer complete (`--log` + `visualizer/index.html`)
+causis is a C++20-based domain-specific language (DSL) and compiler for describing and executing deterministic 2D grid simulations. It provides simulation-oriented constructs such as worlds, robots, targets, obstacles, behaviors, and simulation ticks, allowing users to express grid-based behavior without implementing the underlying simulation engine themselves.
 
-See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
+Unlike a general-purpose programming language, causis is designed around a specific domain: 2D grid simulation. Its language constructs directly represent concepts within that domain, while the compiler translates these high-level descriptions into an executable form.
 
-## Examples
+A causis program passes through a complete compiler pipeline. Source code is transformed from tokens into an abstract syntax tree (AST), checked for semantic correctness, lowered into an intermediate representation (IR), optimized, and compiled into bytecode. A custom virtual machine (VM) executes the bytecode and drives the simulation runtime.
 
-| File | Description |
-|------|-------------|
-| [examples/basic_move.ls](examples/basic_move.ls) | Robot moves right every tick |
-| [examples/collision.ls](examples/collision.ls) | Robot turns when blocked ahead |
-| [examples/target.ls](examples/target.ls) | Robot moves toward a named target |
-| [examples/path_to_target.ls](examples/path_to_target.ls) | Robot navigates around obstacles to reach a target (DoD demo) |
+The project brings together compiler construction and simulation runtime design in a single system, demonstrating how a purpose-built language can be transformed through multiple compiler stages and ultimately used to control a deterministic simulation. The resulting simulation state can be recorded as a tick log and explored through a static 2D visualization.
 
-## Build (MSYS2 UCRT64)
-
-Use the **MSYS2 UCRT64** terminal (not plain PowerShell — `cmake` and `g++` live
-in the MSYS environment). From the project root:
-
-```sh
-cmake -S . -B build -G Ninja
-cmake --build build
 ```
+                                           causis Source
 
-If `build/` was configured with a different generator before, delete it first:
+                                                ↓
 
-```sh
-rm -rf build
-```
+                                              Lexer
 
-From **PowerShell**, either open MSYS2 UCRT64, or prefix PATH for one session:
+                                                ↓
 
-```powershell
-$env:PATH = "C:\msys64\ucrt64\bin;C:\msys64\usr\bin;" + $env:PATH
-cmake -S . -B build -G Ninja
-cmake --build build
-```
+                                              Parser
 
-Adjust `C:\msys64` if your MSYS2 install is elsewhere.
+                                                ↓
 
-## Smoke Test
+                                               AST
 
-```sh
-ctest --test-dir build --output-on-failure
-```
+                                                ↓
 
-## CLI
+                                         Semantic Analysis
 
-`causis` is not installed globally. Run the built binary:
+                                                ↓
 
-```sh
-./build/causis.exe --help
-./build/causis.exe tokenize examples/basic_move.ls
-./build/causis.exe parse examples/basic_move.ls
-./build/causis.exe semantic examples/basic_move.ls
-./build/causis.exe run examples/basic_move.ls
-./build/causis.exe run examples/basic_move.ls --ticks 3
-./build/causis.exe ir examples/basic_move.ls
-./build/causis.exe optimize examples/basic_move.ls
-./build/causis.exe disassemble examples/basic_move.ls
-./build/causis.exe run examples/path_to_target.ls --ticks 80 --log build/path_log.json
-```
+                                               IR
 
-## Visualizer
+                                                ↓
 
-Generate a tick log, then open the static HTML page:
+                                           Optimization
 
-```sh
-./build/causis.exe run examples/path_to_target.ls --ticks 80 --log build/path_log.json
-```
+                                                ↓
 
-Open [visualizer/index.html](visualizer/index.html) in a browser, load the JSON file,
-and use **Next tick** to step through the simulation. The page shows the grid,
-robots, targets, obstacles, tick number, and robot coordinates.
+                                             Bytecode
 
-In PowerShell:
+                                                ↓
 
-```powershell
-.\build\causis.exe --help
+                                        Virtual Machine(VM)
+
+                                                ↓
+
+                                        Simulation Runtime
+
+                                                ↓
+
+                                    Tick Log / 2D Visualization
 ```
