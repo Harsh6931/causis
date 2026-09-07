@@ -1,6 +1,6 @@
 # causis Language Specification v1
 
-> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+> This is the canonical v1 specification for causis.
 
 causis v1 is a small domain-specific language for describing deterministic
 2D grid simulations. A program declares one world, places simulation entities

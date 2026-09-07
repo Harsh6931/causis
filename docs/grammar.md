@@ -1,6 +1,6 @@
 # causis Grammar v1
 
-> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+> This is the canonical v1 specification for causis.
 
 This document defines the v1 grammar for causis source files.
 

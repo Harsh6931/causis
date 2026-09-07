@@ -1,6 +1,6 @@
 # causis Semantics v1
 
-> This is the canonical v1 spec; see [PLAN.md](../PLAN.md) Section 0 for project scope.
+> This is the canonical v1 specification for causis.
 
 This document defines what valid causis v1 programs mean at compile time and
 runtime.
