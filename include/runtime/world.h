@@ -74,6 +74,7 @@ private:
     bool in_bounds(int x, int y) const;
     Cell& cell_at_mut(int x, int y);
     bool is_passable(int x, int y) const;
+    bool can_enter_cell(int x, int y) const;
     bool try_move_robot(Robot& robot, int dx, int dy);
     Robot* find_robot(const std::string& name);
     const Robot* find_robot(const std::string& name) const;

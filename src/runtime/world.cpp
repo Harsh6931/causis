@@ -54,6 +54,15 @@ bool World::is_passable(int x, int y) const {
     return cell_at(x, y).kind == CellKind::Empty;
 }
 
+bool World::can_enter_cell(int x, int y) const {
+    if (!in_bounds(x, y)) {
+        return false;
+    }
+
+    const CellKind kind = cell_at(x, y).kind;
+    return kind == CellKind::Empty || kind == CellKind::Target;
+}
+
 bool World::place_robot(const std::string& name, int x, int y) {
     if (robot_index_.contains(name)) {
         return false;
@@ -144,7 +153,7 @@ bool World::try_move_robot(Robot& robot, int dx, int dy) {
     const int new_x = robot.x + dx;
     const int new_y = robot.y + dy;
 
-    if (!in_bounds(new_x, new_y) || !is_passable(new_x, new_y)) {
+    if (!in_bounds(new_x, new_y) || !can_enter_cell(new_x, new_y)) {
         robot.collision_flag = true;
         return false;
     }

@@ -16,7 +16,7 @@ causis is a domain-specific language and compiler for describing, running, and v
 - **Stage 9** — bytecode complete (`causis disassemble`)
 - **Stage 10** — VM complete (`causis run` uses bytecode)
 - **Stage 11** — CLI complete (shared frontend loader, `--ticks` on `run`)
-- **Next** — Stage 12 static visualizer
+- **Stage 12** — static visualizer complete (`--log` + `visualizer/index.html`)
 
 See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language.md) for the v1 language spec.
 
@@ -27,6 +27,7 @@ See [PLAN.md](PLAN.md) for the full roadmap and [docs/language.md](docs/language
 | [examples/basic_move.ls](examples/basic_move.ls) | Robot moves right every tick |
 | [examples/collision.ls](examples/collision.ls) | Robot turns when blocked ahead |
 | [examples/target.ls](examples/target.ls) | Robot moves toward a named target |
+| [examples/path_to_target.ls](examples/path_to_target.ls) | Robot navigates around obstacles to reach a target (DoD demo) |
 
 ## Build (MSYS2 UCRT64)
 
@@ -74,7 +75,20 @@ ctest --test-dir build --output-on-failure
 ./build/causis.exe ir examples/basic_move.ls
 ./build/causis.exe optimize examples/basic_move.ls
 ./build/causis.exe disassemble examples/basic_move.ls
+./build/causis.exe run examples/path_to_target.ls --ticks 80 --log build/path_log.json
 ```
+
+## Visualizer
+
+Generate a tick log, then open the static HTML page:
+
+```sh
+./build/causis.exe run examples/path_to_target.ls --ticks 80 --log build/path_log.json
+```
+
+Open [visualizer/index.html](visualizer/index.html) in a browser, load the JSON file,
+and use **Next tick** to step through the simulation. The page shows the grid,
+robots, targets, obstacles, tick number, and robot coordinates.
 
 In PowerShell:
 

@@ -2,6 +2,7 @@
 
 #include "ast/ast.h"
 #include "runtime/simulation.h"
+#include "runtime/tick_log.h"
 
 #include <optional>
 #include <string>
@@ -35,7 +36,8 @@ struct RunResult {
     std::optional<RuntimeError> error;
 };
 
-RunResult run_program(const ast::Program& program, int tick_count);
+RunResult run_program(const ast::Program& program, int tick_count,
+                      TickLog* tick_log = nullptr);
 
 std::string format_run_summary(const Simulation& simulation);
 

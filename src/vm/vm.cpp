@@ -20,7 +20,8 @@ struct Value {
 
 class VirtualMachine {
 public:
-  explicit VirtualMachine(const bytecode::Program& program) : program_(program) {}
+  VirtualMachine(const bytecode::Program& program, VmTickRecorder recorder)
+      : program_(program), recorder_(recorder) {}
 
   VmResult run(int tick_count) {
     if (tick_count < 0) {
@@ -39,6 +40,8 @@ public:
             return make_error(instruction.line, instruction.column,
                               "program halted before world was created");
           }
+
+          record_initial_if_needed();
 
           VmResult result;
           result.ok = true;
@@ -60,6 +63,8 @@ public:
 
 private:
   const bytecode::Program& program_;
+  VmTickRecorder recorder_{};
+  bool recorded_initial_{false};
   std::optional<runtime::Simulation> simulation_;
   std::string current_robot_;
   std::unordered_map<std::string, Value> variables_;
@@ -82,6 +87,22 @@ private:
       raise_error(1, 1, "world has not been created");
     }
     return simulation_->world();
+  }
+
+  void record_frame(int tick) {
+    if (recorder_.on_frame == nullptr || !simulation_.has_value()) {
+      return;
+    }
+
+    recorder_.on_frame(recorder_.user_data, *simulation_, tick);
+  }
+  void record_initial_if_needed() {
+    if (recorder_.on_frame == nullptr || recorded_initial_ || !simulation_.has_value()) {
+      return;
+    }
+
+    recorded_initial_ = true;
+    record_frame(0);
   }
 
   void push_int(int value) {
@@ -317,13 +338,16 @@ private:
     }
     case bytecode::Opcode::BeginTick:
       if (ticks_completed_ >= max_ticks_) {
+        record_initial_if_needed();
         return find_halt(ip);
       }
+      record_initial_if_needed();
       world();
       simulation_->begin_tick();
       return ip + 1;
     case bytecode::Opcode::EndTick:
       simulation_->end_tick();
+      record_frame(simulation_->tick_count());
       ++ticks_completed_;
       if (ticks_completed_ >= max_ticks_) {
         return skip_tick_loop_after_max_ticks(ip);
@@ -383,8 +407,8 @@ private:
 
 } // namespace
 
-VmResult run_bytecode(const bytecode::Program& program, int tick_count) {
-  VirtualMachine vm(program);
+VmResult run_bytecode(const bytecode::Program& program, int tick_count, VmTickRecorder recorder) {
+  VirtualMachine vm(program, recorder);
   return vm.run(tick_count);
 }
 

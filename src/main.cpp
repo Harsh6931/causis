@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -11,6 +12,7 @@
 #include "ir/optimizer.h"
 #include "lexer/lexer.h"
 #include "runtime/program_runner.h"
+#include "runtime/tick_log.h"
 
 namespace {
 
@@ -24,9 +26,10 @@ Usage:
   causis ir <program.ls>
   causis optimize <program.ls>
   causis disassemble <program.ls>
-  causis run <program.ls> [--ticks N]
+  causis run <program.ls> [--ticks N] [--log tick-log.json]
 
 Default simulation length for run is 10 ticks.
+Use --log to write a tick-by-tick JSON log for visualizer/index.html.
 )";
 
 constexpr int kDefaultTicks = 10;
@@ -99,13 +102,23 @@ int run_semantic(const std::string& path) {
   return 0;
 }
 
-int run_simulation(const std::string& path, int tick_count) {
+struct RunOptions {
+  std::string path;
+  int tick_count{kDefaultTicks};
+  std::optional<std::string> log_path;
+};
+
+int run_simulation(const RunOptions& options) {
   std::unique_ptr<causis::ast::Program> program;
-  if (!load_program_or_report(path, program)) {
+  if (!load_program_or_report(options.path, program)) {
     return 1;
   }
 
-  const causis::runtime::RunResult run_result = causis::runtime::run_program(*program, tick_count);
+  causis::runtime::TickLog tick_log;
+  causis::runtime::TickLog* log_ptr = options.log_path.has_value() ? &tick_log : nullptr;
+
+  const causis::runtime::RunResult run_result =
+      causis::runtime::run_program(*program, options.tick_count, log_ptr);
   if (run_result.error.has_value()) {
     std::cerr << "Runtime error: " << run_result.error->message << " at line "
               << run_result.error->line << ", column " << run_result.error->column << '\n';
@@ -115,6 +128,14 @@ int run_simulation(const std::string& path, int tick_count) {
   if (!run_result.simulation.has_value()) {
     std::cerr << "Runtime error: simulation did not run\n";
     return 1;
+  }
+
+  if (options.log_path.has_value()) {
+    if (!causis::runtime::write_tick_log_file(*options.log_path, tick_log)) {
+      std::cerr << "causis: could not write tick log '" << *options.log_path << "'\n";
+      return 1;
+    }
+    std::cout << "Wrote tick log to " << *options.log_path << ".\n";
   }
 
   std::cout << causis::runtime::format_run_summary(*run_result.simulation);
@@ -217,24 +238,45 @@ bool parse_tick_count(const char* text, int& tick_count) {
   }
 }
 
-bool parse_run_command(int argc, char* argv[], std::string& path, int& tick_count) {
-  path = argv[2];
-  tick_count = kDefaultTicks;
+bool parse_run_command(int argc, char* argv[], RunOptions& options) {
+  options.path = argv[2];
+  options.tick_count = kDefaultTicks;
+  options.log_path.reset();
 
-  if (argc == 3) {
-    return true;
-  }
-
-  if (argc == 5 && std::string(argv[3]) == "--ticks") {
-    if (!parse_tick_count(argv[4], tick_count)) {
-      std::cerr << "causis: --ticks requires a non-negative integer\n";
-      return false;
+  for (int i = 3; i < argc; ++i) {
+    const std::string flag{argv[i]};
+    if (flag == "--ticks") {
+      if (i + 1 >= argc) {
+        std::cerr << "causis: --ticks requires a value\n";
+        return false;
+      }
+      if (!parse_tick_count(argv[i + 1], options.tick_count)) {
+        std::cerr << "causis: --ticks requires a non-negative integer\n";
+        return false;
+      }
+      ++i;
+      continue;
     }
-    return true;
+
+    if (flag == "--log") {
+      if (i + 1 >= argc) {
+        std::cerr << "causis: --log requires a file path\n";
+        return false;
+      }
+      options.log_path = argv[i + 1];
+      ++i;
+      continue;
+    }
+
+    std::cerr << "causis: unknown run option '" << flag << "'\n";
+    return false;
   }
 
-  std::cerr << "causis: usage: causis run <program.ls> [--ticks N]\n";
-  return false;
+  return true;
+}
+
+void print_run_usage() {
+  std::cerr << "causis: usage: causis run <program.ls> [--ticks N] [--log tick-log.json]\n";
 }
 
 } // namespace
@@ -252,18 +294,18 @@ int main(int argc, char* argv[]) {
   }
 
   if (command == "run") {
-    if (argc < 3 || argc == 4 || argc > 5) {
-      std::cerr << "causis: usage: causis run <program.ls> [--ticks N]\n";
+    if (argc < 3) {
+      print_run_usage();
       return 1;
     }
 
-    std::string path;
-    int tick_count = kDefaultTicks;
-    if (!parse_run_command(argc, argv, path, tick_count)) {
+    RunOptions options;
+    if (!parse_run_command(argc, argv, options)) {
+      print_run_usage();
       return 1;
     }
 
-    return run_simulation(path, tick_count);
+    return run_simulation(options);
   }
 
   if (argc != 3) {

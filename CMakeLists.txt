@@ -92,6 +92,7 @@ add_library(causis_runtime STATIC
     src/runtime/simulation.cpp
     src/runtime/executor.cpp
     src/runtime/program_runner.cpp
+    src/runtime/tick_log.cpp
 )
 
 target_include_directories(causis_runtime
@@ -207,6 +208,7 @@ add_test(NAME causis_optimize_basic COMMAND causis optimize ${CMAKE_SOURCE_DIR}/
 add_test(NAME causis_disassemble_basic COMMAND causis disassemble ${CMAKE_SOURCE_DIR}/examples/basic_move.ls)
 add_test(NAME causis_run_target COMMAND causis run ${CMAKE_SOURCE_DIR}/examples/target.ls)
 add_test(NAME causis_run_ticks COMMAND causis run ${CMAKE_SOURCE_DIR}/examples/basic_move.ls --ticks 3)
+add_test(NAME causis_run_log COMMAND causis run ${CMAKE_SOURCE_DIR}/examples/basic_move.ls --ticks 2 --log ${CMAKE_BINARY_DIR}/ctest_tick_log.json)
 
 add_executable(lexer_test
     tests/lexer/lexer_test.cpp
@@ -278,6 +280,22 @@ target_link_libraries(program_runner_test
 )
 
 gtest_discover_tests(program_runner_test
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_executable(tick_log_test
+    tests/runtime/tick_log_test.cpp
+)
+
+target_link_libraries(tick_log_test
+    PRIVATE
+        causis_runtime
+        causis_semantic
+        causis_parser
+        GTest::gtest_main
+)
+
+gtest_discover_tests(tick_log_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 

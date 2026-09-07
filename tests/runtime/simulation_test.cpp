@@ -44,14 +44,16 @@ TEST(SimulationMovement, BlocksMoveIntoObstacle) {
     EXPECT_TRUE(world.collision("R"));
 }
 
-TEST(SimulationMovement, BlocksMoveIntoTarget) {
+TEST(SimulationMovement, AllowsMoveOntoTarget) {
     causis::runtime::World world(5, 5);
     ASSERT_TRUE(world.place_robot("R", 1, 2));
     ASSERT_TRUE(world.place_target("T", 2, 2));
 
-    EXPECT_FALSE(world.move_right("R"));
-    EXPECT_EQ(world.robot("R").x, 1);
-    EXPECT_TRUE(world.collision("R"));
+    EXPECT_TRUE(world.move_right("R"));
+    EXPECT_EQ(world.robot("R").x, 2);
+    EXPECT_EQ(world.robot("R").y, 2);
+    EXPECT_FALSE(world.collision("R"));
+    EXPECT_EQ(world.distance_to("R", "T"), 0);
 }
 
 TEST(SimulationMovement, MovesForwardUsingDirection) {

@@ -129,15 +129,12 @@ own robot unless an argument explicitly names another entity.
 
 Movement attempts compute a destination cell.
 
-If the destination is inside the world and unoccupied by a robot, target, or
-obstacle, the robot moves there.
+If the destination is inside the world and unoccupied by a robot or obstacle,
+the robot moves there. Target cells are walkable: a robot may enter a target
+cell to complete the goal (`distance_to` becomes 0).
 
-If the destination is outside the world or occupied, the robot does not move
-and its collision flag becomes true.
-
-Movement into a target cell is blocked in v1 because targets occupy cells.
-Reaching a target is represented by becoming adjacent to it or by later v2
-rules; pathfinding and target completion are outside v1.
+If the destination is outside the world or blocked by a robot or obstacle, the
+robot does not move and its collision flag becomes true.
 
 ---
 

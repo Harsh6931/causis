@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>causis simulation visualizer</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #ffffff;
+      --grid-line: #d8d2c8;
+      --obstacle: #4a4a4a;
+      --target: #d97706;
+      --robot: #2563eb;
+      --robot-collision: #dc2626;
+      --robot-goal: #16a34a;
+      --text: #1f2937;
+      --muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.75rem;
+    }
+
+    .intro {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button,
+    input[type="file"] {
+      font: inherit;
+    }
+
+    button {
+      background: var(--robot);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: var(--text);
+    }
+
+    .status {
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      max-width: 720px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fffdf8;
+    }
+
+    .error {
+      color: #b91c1c;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .celebration-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+      animation: fade-in 0.25s ease-out;
+    }
+
+    .celebration-overlay[hidden] {
+      display: none;
+    }
+
+    .celebration-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      animation: pop-in 0.35s ease-out;
+    }
+
+    .celebration-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+      color: #16a34a;
+    }
+
+    .celebration-card p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .celebration-emoji {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      letter-spacing: 0.25rem;
+    }
+
+    .celebration-card button {
+      background: #16a34a;
+      min-width: 120px;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 999;
+    }
+
+    .confetti[hidden] {
+      display: none;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -12px;
+      width: 10px;
+      height: 14px;
+      opacity: 0.9;
+      animation: confetti-fall 2.2s linear forwards;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pop-in {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>causis visualizer</h1>
+    <p class="intro">
+      Load a tick log produced by
+      <code>causis run program.ls --log tick-log.json</code>,
+      then step through the simulation one tick at a time.
+    </p>
+
+    <section class="panel">
+      <div class="controls">
+        <input id="file-input" type="file" accept="application/json,.json">
+        <button id="next-btn" type="button" disabled>Next tick</button>
+        <button id="reset-btn" type="button" class="secondary" disabled>Reset</button>
+      </div>
+      <div id="status" class="status">No tick log loaded.</div>
+      <div id="error" class="error" hidden></div>
+      <div class="legend">
+        <span><i class="swatch" style="background: var(--robot)"></i> Robot</span>
+        <span><i class="swatch" style="background: var(--target)"></i> Target</span>
+        <span><i class="swatch" style="background: var(--robot-goal)"></i> Target reached</span>
+        <span><i class="swatch" style="background: var(--obstacle)"></i> Obstacle</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <canvas id="grid" width="720" height="720" aria-label="Simulation grid"></canvas>
+    </section>
+  </main>
+
+  <div id="confetti" class="confetti" hidden aria-hidden="true"></div>
+
+  <div id="celebration-overlay" class="celebration-overlay" hidden>
+    <div class="celebration-card" role="dialog" aria-labelledby="celebration-title" aria-modal="true">
+      <div class="celebration-emoji" aria-hidden="true">🎉 🎯 🎉</div>
+      <h2 id="celebration-title">Target reached!</h2>
+      <p id="celebration-message">The robot reached its goal. Stepping is complete.</p>
+      <button id="celebration-close" type="button">Awesome!</button>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("file-input");
+    const nextBtn = document.getElementById("next-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const canvas = document.getElementById("grid");
+    const ctx = canvas.getContext("2d");
+    const celebrationOverlay = document.getElementById("celebration-overlay");
+    const celebrationMessage = document.getElementById("celebration-message");
+    const celebrationClose = document.getElementById("celebration-close");
+    const confettiEl = document.getElementById("confetti");
+
+    let tickLog = null;
+    let frameIndex = -1;
+    let goalReachedShown = false;
+
+    const confettiColors = ["#16a34a", "#2563eb", "#d97706", "#f59e0b", "#dc2626", "#8b5cf6"];
+
+    const directionArrow = {
+      up: "\u2191",
+      right: "\u2192",
+      down: "\u2193",
+      left: "\u2190"
+    };
+
+    function showError(message) {
+      errorEl.hidden = false;
+      errorEl.textContent = message;
+    }
+
+    function clearError() {
+      errorEl.hidden = true;
+      errorEl.textContent = "";
+    }
+
+    function validateTickLog(data) {
+      if (!data || typeof data !== "object") {
+        throw new Error("Tick log must be a JSON object.");
+      }
+      if (!Number.isInteger(data.width) || !Number.isInteger(data.height)) {
+        throw new Error("Tick log must include integer width and height.");
+      }
+      if (!Array.isArray(data.frames) || data.frames.length === 0) {
+        throw new Error("Tick log must include a non-empty frames array.");
+      }
+    }
+
+    function robotOnTarget(robot, targets) {
+      return targets.some((target) => target.x === robot.x && target.y === robot.y);
+    }
+
+    function isGoalFrame(frame) {
+      return frame.robots.some((robot) => robotOnTarget(robot, frame.targets));
+    }
+
+    function hideCelebration() {
+      celebrationOverlay.hidden = true;
+      confettiEl.hidden = true;
+      confettiEl.innerHTML = "";
+      goalReachedShown = false;
+    }
+
+    function launchConfetti() {
+      confettiEl.innerHTML = "";
+      confettiEl.hidden = false;
+
+      for (let i = 0; i < 48; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = confettiColors[i % confettiColors.length];
+        piece.style.animationDelay = `${Math.random() * 0.6}s`;
+        piece.style.animationDuration = `${1.8 + Math.random() * 1.2}s`;
+        confettiEl.appendChild(piece);
+      }
+    }
+
+    function showCelebration(frame) {
+      if (goalReachedShown) {
+        return;
+      }
+
+      const matches = [];
+      for (const robot of frame.robots) {
+        for (const target of frame.targets) {
+          if (robot.x === target.x && robot.y === target.y) {
+            matches.push(`Robot ${robot.name} reached target ${target.name} at (${target.x}, ${target.y}).`);
+          }
+        }
+      }
+
+      celebrationMessage.textContent =
+        matches.length > 0
+          ? matches.join(" ")
+          : "The robot reached its goal. Stepping is complete.";
+      celebrationOverlay.hidden = false;
+      launchConfetti();
+      goalReachedShown = true;
+    }
+
+    function cellSize() {
+      const padding = 24;
+      const size = Math.floor(
+        Math.min(
+          (canvas.width - padding * 2) / tickLog.width,
+          (canvas.height - padding * 2) / tickLog.height
+        )
+      );
+      return Math.max(size, 12);
+    }
+
+    function gridOrigin(cell) {
+      const padding = 24;
+      const gridWidth = tickLog.width * cell;
+      const gridHeight = tickLog.height * cell;
+      const offsetX = Math.floor((canvas.width - gridWidth) / 2);
+      const offsetY = Math.floor((canvas.height - gridHeight) / 2);
+      return { offsetX, offsetY, gridWidth, gridHeight };
+    }
+
+    function drawFrame(frame) {
+      if (!tickLog || !frame) {
+        return;
+      }
+
+      const cell = cellSize();
+      const { offsetX, offsetY, gridWidth, gridHeight } = gridOrigin(cell);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fffdf8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "#d8d2c8";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= tickLog.width; x += 1) {
+        const px = offsetX + x * cell;
+        ctx.beginPath();
+        ctx.moveTo(px, offsetY);
+        ctx.lineTo(px, offsetY + gridHeight);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= tickLog.height; y += 1) {
+        const py = offsetY + y * cell;
+        ctx.beginPath();
+        ctx.moveTo(offsetX, py);
+        ctx.lineTo(offsetX + gridWidth, py);
+        ctx.stroke();
+      }
+
+      for (const obstacle of frame.obstacles) {
+        ctx.fillStyle = "#4a4a4a";
+        ctx.fillRect(
+          offsetX + obstacle.x * cell + 2,
+          offsetY + obstacle.y * cell + 2,
+          cell - 4,
+          cell - 4
+        );
+      }
+
+      for (const target of frame.targets) {
+        const covered = frame.robots.some((robot) => robotOnTarget(robot, [target]));
+        if (covered) {
+          continue;
+        }
+
+        const cx = offsetX + target.x * cell + cell / 2;
+        const cy = offsetY + target.y * cell + cell / 2;
+        ctx.fillStyle = "#d97706";
+        ctx.beginPath();
+        ctx.arc(cx, cy, cell * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `${Math.max(12, cell * 0.35)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(target.name, cx, cy);
+      }
+
+      for (const robot of frame.robots) {
+        const onTarget = robotOnTarget(robot, frame.targets);
+        const x = offsetX + robot.x * cell + 2;
+        const y = offsetY + robot.y * cell + 2;
+        if (onTarget) {
+          ctx.fillStyle = "#16a34a";
+        } else if (robot.collision) {
+          ctx.fillStyle = "#dc2626";
+        } else {
+          ctx.fillStyle = "#2563eb";
+        }
+        ctx.fillRect(x, y, cell - 4, cell - 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold ${Math.max(12, cell * 0.35)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const label = robot.name.slice(0, 2);
+        ctx.fillText(label, x + (cell - 4) / 2, y + (cell - 4) / 2 - cell * 0.08);
+        const arrow = directionArrow[robot.direction] || "?";
+        ctx.font = `${Math.max(12, cell * 0.32)}px sans-serif`;
+        ctx.fillText(arrow, x + (cell - 4) / 2, y + (cell - 4) / 2 + cell * 0.22);
+      }
+
+      const goalReached = isGoalFrame(frame);
+      const robotLines = frame.robots.map((robot) => {
+        if (robotOnTarget(robot, frame.targets)) {
+          return `Robot ${robot.name}: (${robot.x}, ${robot.y}) — target reached`;
+        }
+        const collision = robot.collision ? "collision" : "ok";
+        return `Robot ${robot.name}: (${robot.x}, ${robot.y}) ${robot.direction}, ${collision}`;
+      });
+
+      const statusLines = [
+        `<strong>Tick ${frame.tick}</strong> of ${tickLog.frames[tickLog.frames.length - 1].tick}`,
+        robotLines.length > 0 ? robotLines.join("<br>") : "No robots in this frame."
+      ];
+      if (goalReached) {
+        statusLines.push("<strong>Target reached — simulation complete.</strong>");
+      }
+      statusEl.innerHTML = statusLines.join("<br>");
+    }
+
+    function updateButtons() {
+      const hasLog = tickLog && tickLog.frames.length > 0;
+      const current = hasLog && frameIndex >= 0 ? tickLog.frames[frameIndex] : null;
+      const atGoal = current != null && isGoalFrame(current);
+      const canAdvance = hasLog && frameIndex + 1 < tickLog.frames.length && !atGoal;
+      nextBtn.disabled = !canAdvance;
+      resetBtn.disabled = !hasLog || frameIndex < 0;
+    }
+
+    function showCurrentFrame() {
+      if (!tickLog || frameIndex < 0) {
+        return;
+      }
+      const frame = tickLog.frames[frameIndex];
+      drawFrame(frame);
+      if (isGoalFrame(frame)) {
+        showCelebration(frame);
+      }
+      updateButtons();
+    }
+
+    function loadTickLog(data) {
+      validateTickLog(data);
+      tickLog = data;
+      frameIndex = -1;
+      hideCelebration();
+      clearError();
+      statusEl.textContent = `Loaded ${tickLog.frames.length} frame(s) for a ${tickLog.width}x${tickLog.height} world. Press Next tick.`;
+      updateButtons();
+    }
+
+    fileInput.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        loadTickLog(data);
+      } catch (error) {
+        tickLog = null;
+        frameIndex = -1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        statusEl.textContent = "No tick log loaded.";
+        showError(error.message || String(error));
+        updateButtons();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (!tickLog || frameIndex + 1 >= tickLog.frames.length) {
+        return;
+      }
+      const current = tickLog.frames[frameIndex];
+      if (frameIndex >= 0 && isGoalFrame(current)) {
+        return;
+      }
+      frameIndex += 1;
+      showCurrentFrame();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (!tickLog) {
+        return;
+      }
+      frameIndex = -1;
+      hideCelebration();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      statusEl.textContent = `Loaded ${tickLog.frames.length} frame(s). Press Next tick to start from tick ${tickLog.frames[0].tick}.`;
+      updateButtons();
+    });
+
+    celebrationClose.addEventListener("click", () => {
+      celebrationOverlay.hidden = true;
+    });
+
+    celebrationOverlay.addEventListener("click", (event) => {
+      if (event.target === celebrationOverlay) {
+        celebrationOverlay.hidden = true;
+      }
+    });
+  </script>
+</body>
+</html>
