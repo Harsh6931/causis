@@ -10,6 +10,8 @@ const char* opcode_name(Opcode opcode) {
     return "HALT";
   case Opcode::PushConst:
     return "PUSH_CONST";
+  case Opcode::PushBool:
+    return "PUSH_BOOL";
   case Opcode::LoadVar:
     return "LOAD_VAR";
   case Opcode::StoreVar:
@@ -94,6 +96,9 @@ std::string format_instruction(const Program& program, const Instruction& instru
   switch (instruction.opcode) {
   case Opcode::PushConst:
     out << ' ' << instruction.a << " (" << program.int_constants[instruction.a] << ')';
+    break;
+  case Opcode::PushBool:
+    out << ' ' << (instruction.a != 0 ? "true" : "false");
     break;
   case Opcode::LoadVar:
   case Opcode::StoreVar:

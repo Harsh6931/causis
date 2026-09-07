@@ -11,6 +11,7 @@ enum class Opcode : uint8_t {
   Halt,
 
   PushConst,
+  PushBool,
   LoadVar,
   StoreVar,
   Pop,

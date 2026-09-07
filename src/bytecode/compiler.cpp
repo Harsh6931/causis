@@ -124,8 +124,8 @@ private:
       return true;
     }
     case ir::Opcode::PushBool: {
-      Instruction out = make_instruction(Opcode::PushConst, instruction.line, instruction.column);
-      out.a = intern_int(instruction.bool_value ? 1 : 0);
+      Instruction out = make_instruction(Opcode::PushBool, instruction.line, instruction.column);
+      out.a = instruction.bool_value ? 1 : 0;
       output_.code.push_back(out);
       return true;
     }
