@@ -1,14 +1,21 @@
 #include "runtime/program_runner.h"
 
-#include "runtime/executor.h"
+#include "bytecode/compiler.h"
+#include "ir/lower.h"
+#include "ir/optimizer.h"
+#include "vm/vm.h"
 
 #include <sstream>
-#include <unordered_map>
-
-// take AST and make it run for some number of ticks
-
 
 namespace causis::runtime {
+
+RuntimeException::RuntimeException(RuntimeError error)
+    : std::runtime_error(error.message), error_(std::move(error)) {}
+
+const RuntimeError& RuntimeException::error() const {
+    return error_;
+}
+
 namespace {
 
 std::string direction_name(Direction direction) {
@@ -26,69 +33,7 @@ std::string direction_name(Direction direction) {
     return "right";
 }
 
-// take the AST and build the world
-World build_world(const ast::Program& program) {
-    const ast::WorldDecl* world_decl = nullptr;
-    for (const std::unique_ptr<ast::Decl>& decl : program.declarations) {
-        if (const auto* world = dynamic_cast<const ast::WorldDecl*>(decl.get())) {
-            world_decl = world;
-            break;
-        }
-    }
-
-    if (world_decl == nullptr) {
-        RuntimeError err;
-        err.message = "program must declare a world";
-        throw RuntimeException(std::move(err));
-    }
-
-    World world(world_decl->width, world_decl->height);
-
-    for (const std::unique_ptr<ast::Decl>& decl : program.declarations) {
-        if (const auto* robot = dynamic_cast<const ast::RobotDecl*>(decl.get())) {
-            if (!world.place_robot(robot->name, robot->x, robot->y)) {
-                RuntimeError err;
-                err.message = "failed to place robot '" + robot->name + "'";
-                err.line = robot->line;
-                err.column = robot->column;
-                throw RuntimeException(std::move(err));
-            }
-            continue;
-        }
-
-        if (const auto* target = dynamic_cast<const ast::TargetDecl*>(decl.get())) {
-            if (!world.place_target(target->name, target->x, target->y)) {
-                RuntimeError err;
-                err.message = "failed to place target '" + target->name + "'";
-                err.line = target->line;
-                err.column = target->column;
-                throw RuntimeException(std::move(err));
-            }
-            continue;
-        }
-
-        if (const auto* obstacle = dynamic_cast<const ast::ObstacleDecl*>(decl.get())) {
-            if (!world.place_obstacle(obstacle->x, obstacle->y)) {
-                RuntimeError err;
-                err.message = "failed to place obstacle";
-                err.line = obstacle->line;
-                err.column = obstacle->column;
-                throw RuntimeException(std::move(err));
-            }
-        }
-    }
-
-    return world;
-}
-
 } // namespace
-
-RuntimeException::RuntimeException(RuntimeError error)
-    : std::runtime_error(error.message), error_(std::move(error)) {}
-
-const RuntimeError& RuntimeException::error() const {
-    return error_;
-}
 
 RunResult run_program(const ast::Program& program, int tick_count) {
     RunResult result;
@@ -100,50 +45,61 @@ RunResult run_program(const ast::Program& program, int tick_count) {
         return result;
     }
 
-    try {
-        Simulation simulation(build_world(program));
-
-        std::vector<std::string> robot_order;
-        std::unordered_map<std::string, const ast::BehaviorDecl*> behaviors;
-
-        for (const std::unique_ptr<ast::Decl>& decl : program.declarations) {
-            if (const auto* robot = dynamic_cast<const ast::RobotDecl*>(decl.get())) {
-                robot_order.push_back(robot->name);
-                continue;
-            }
-
-            if (const auto* behavior = dynamic_cast<const ast::BehaviorDecl*>(decl.get())) {
-                behaviors[behavior->robot_name] = behavior;
-            }
-        }
-
-        for (int tick = 0; tick < tick_count; ++tick) {
-            simulation.begin_tick();
-
-            for (const std::string& robot_name : robot_order) {
-                const auto found = behaviors.find(robot_name);
-                if (found == behaviors.end()) {
-                    continue;
-                }
-
-                Executor executor(simulation, robot_name);
-                for (const std::unique_ptr<ast::EveryTickStmt>& event : found->second->event_blocks) {
-                    if (event->body != nullptr) {
-                        executor.execute_block(*event->body);
-                    }
-                }
-            }
-
-            simulation.end_tick();
-        }
-
-        result.simulation = std::move(simulation);
-        result.ok = true;
-        return result;
-    } catch (const RuntimeException& ex) {
-        result.error = ex.error();
+    const ir::LowerResult lower_result = ir::lower_program(program);
+    if (lower_result.error.has_value()) {
+        RuntimeError err;
+        err.message = lower_result.error->message;
+        err.line = lower_result.error->line;
+        err.column = lower_result.error->column;
+        result.error = err;
         return result;
     }
+
+    if (!lower_result.program.has_value()) {
+        RuntimeError err;
+        err.message = "IR lowering produced no program";
+        result.error = err;
+        return result;
+    }
+
+    const ir::IrProgram optimized = ir::optimize_program(*lower_result.program);
+    const bytecode::CompileResult compile_result = bytecode::compile_ir(optimized);
+    if (compile_result.error.has_value()) {
+        RuntimeError err;
+        err.message = compile_result.error->message;
+        err.line = compile_result.error->line;
+        err.column = compile_result.error->column;
+        result.error = err;
+        return result;
+    }
+
+    if (!compile_result.program.has_value()) {
+        RuntimeError err;
+        err.message = "bytecode compilation produced no program";
+        result.error = err;
+        return result;
+    }
+
+    const vm::VmResult vm_result = vm::run_bytecode(*compile_result.program, tick_count);
+    if (vm_result.error.has_value()) {
+        RuntimeError err;
+        err.message = vm_result.error->message;
+        err.line = vm_result.error->line;
+        err.column = vm_result.error->column;
+        result.error = err;
+        return result;
+    }
+
+    if (!vm_result.simulation.has_value()) {
+        RuntimeError err;
+        err.message = "VM did not produce a simulation";
+        result.error = err;
+        return result;
+    }
+
+    result.ok = true;
+    result.simulation = std::move(*vm_result.simulation);
+    return result;
 }
 
 std::string format_run_summary(const Simulation& simulation) {

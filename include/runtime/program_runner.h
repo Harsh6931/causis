@@ -9,9 +9,8 @@
 
 namespace causis::runtime {
 
-// Stage 6 bridge: run_program() walks the AST via Executor and drives World/Simulation
-// directly. This validates simulation semantics before IR/bytecode/VM exist (Stages 7-10).
-// The final pipeline is AST -> IR -> bytecode -> VM; the VM will replace this interpreter.
+// run_program() compiles the AST to optimized bytecode and executes it on the VM.
+// The AST Executor remains in the tree for reference; production execution uses the VM.
 
 struct RuntimeError {
     std::string message;
@@ -29,8 +28,7 @@ private:
     RuntimeError error_;
 };
 
-// file will execute the AST Program and return the result of the simulation
-// (interim path — not the long-term execution model; see comment above)
+// file will compile and execute the AST Program via bytecode + VM
 struct RunResult {
     bool ok{false};
     std::optional<Simulation> simulation;
