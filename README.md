@@ -1,4 +1,4 @@
-# causis
+# Causis
 
 A C++20-based domain-specific language, compiler, bytecode virtual machine, and simulation runtime for deterministic 2D grid simulations.
 
