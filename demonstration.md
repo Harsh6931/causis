@@ -7,6 +7,7 @@ then
 .\build\causis.exe parse examples\target.ls
 
 .\build\causis.exe semantic invalid.ls
+.\build\causis.exe semantic examples\target.ls
 
 .\build\causis.exe ir examples\target.ls
 
@@ -16,6 +17,7 @@ then
 
 .\build\causis.exe run examples\target.ls
 
+.\build\causis.exe optimize examples\target.ls --stats
 
 if visulaize
 
