@@ -246,3 +246,88 @@ behavior R {
   EXPECT_EQ(causis::count_opcode(optimized, causis::ir::Opcode::MoveRight), 0);
   EXPECT_EQ(causis::count_opcode(optimized, causis::ir::Opcode::MoveLeft), 1);
 }
+
+TEST(OptimizerStopUnreachable, RemovesCodeAfterStraightLineStop) {
+  const std::unique_ptr<causis::ast::Program> program = causis::compile_program(R"(
+world 5 5;
+robot R at 0 0;
+behavior R {
+    every tick {
+        stop();
+        move_right();
+        move_left();
+    }
+}
+)");
+
+  ASSERT_NE(program, nullptr);
+
+  const causis::ir::IrProgram raw = causis::lower(*program);
+  const causis::ir::OptimizationResult result = causis::ir::optimize_program_with_stats(raw);
+
+  EXPECT_EQ(causis::count_opcode(raw, causis::ir::Opcode::MoveRight), 1);
+  EXPECT_EQ(causis::count_opcode(raw, causis::ir::Opcode::MoveLeft), 1);
+  EXPECT_EQ(causis::count_opcode(result.program, causis::ir::Opcode::MoveRight), 0);
+  EXPECT_EQ(causis::count_opcode(result.program, causis::ir::Opcode::MoveLeft), 0);
+  EXPECT_LT(result.stats.ir_instructions_after, result.stats.ir_instructions_before);
+}
+
+TEST(OptimizerRedundantTurns, RemovesOppositeTurnPair) {
+  const std::unique_ptr<causis::ast::Program> program = causis::compile_program(R"(
+world 5 5;
+robot R at 0 0;
+behavior R {
+    every tick {
+        turn_left();
+        turn_right();
+        move_forward();
+    }
+}
+)");
+
+  ASSERT_NE(program, nullptr);
+
+  const causis::ir::IrProgram raw = causis::lower(*program);
+  const causis::ir::OptimizationResult result = causis::ir::optimize_program_with_stats(raw);
+
+  EXPECT_EQ(causis::count_opcode(raw, causis::ir::Opcode::TurnLeft), 1);
+  EXPECT_EQ(causis::count_opcode(raw, causis::ir::Opcode::TurnRight), 1);
+  EXPECT_EQ(causis::count_opcode(result.program, causis::ir::Opcode::TurnLeft), 0);
+  EXPECT_EQ(causis::count_opcode(result.program, causis::ir::Opcode::TurnRight), 0);
+  EXPECT_EQ(causis::count_opcode(result.program, causis::ir::Opcode::MoveForward), 1);
+}
+
+TEST(OptimizerStage13, PathToTargetExampleReducesInstructionCount) {
+  const std::unique_ptr<causis::ast::Program> program = causis::compile_program(R"(
+world 20 20;
+robot R at 2 2;
+target T at 17 17;
+obstacle at 8 5;
+obstacle at 8 6;
+obstacle at 8 7;
+obstacle at 8 8;
+behavior R {
+    every tick {
+        if distance_to(T) == 0 {
+            stop();
+        }
+        if obstacle_ahead() {
+            turn_right();
+            move_forward();
+        } else {
+            move_toward(T);
+            if collision() {
+                turn_right();
+            }
+        }
+    }
+}
+)");
+
+  ASSERT_NE(program, nullptr);
+
+  const causis::ir::IrProgram raw = causis::lower(*program);
+  const causis::ir::OptimizationResult result = causis::ir::optimize_program_with_stats(raw);
+
+  EXPECT_LT(result.stats.ir_instructions_after, result.stats.ir_instructions_before);
+}
