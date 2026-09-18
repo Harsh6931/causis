@@ -24,7 +24,7 @@ Usage:
   causis parse <program.ls>
   causis semantic <program.ls>
   causis ir <program.ls>
-  causis optimize <program.ls>
+  causis optimize <program.ls> [--stats]
   causis disassemble <program.ls>
   causis run <program.ls> [--ticks N] [--log tick-log.json]
 
@@ -164,7 +164,23 @@ int run_ir(const std::string& path) {
   return 0;
 }
 
-int run_optimize(const std::string& path) {
+int run_optimize(int argc, char* argv[]) {
+  if (argc < 3) {
+    std::cerr << "causis: usage: causis optimize <program.ls> [--stats]\n";
+    return 1;
+  }
+
+  const std::string path = argv[2];
+  bool show_stats = false;
+  for (int i = 3; i < argc; ++i) {
+    if (std::string(argv[i]) == "--stats") {
+      show_stats = true;
+    } else {
+      std::cerr << "causis: unknown option '" << argv[i] << "' for optimize\n";
+      return 1;
+    }
+  }
+
   std::unique_ptr<causis::ast::Program> program;
   if (!load_program_or_report(path, program)) {
     return 1;
@@ -182,10 +198,33 @@ int run_optimize(const std::string& path) {
     return 1;
   }
 
+  const causis::ir::OptimizationResult optimized =
+      causis::ir::optimize_program_with_stats(*lower_result.program);
+
+  if (show_stats) {
+    causis::ir::OptimizationStats stats = optimized.stats;
+
+    const causis::bytecode::CompileResult raw_bytecode =
+        causis::bytecode::compile_ir(*lower_result.program);
+    const causis::bytecode::CompileResult opt_bytecode =
+        causis::bytecode::compile_ir(optimized.program);
+    if (!raw_bytecode.ok || !raw_bytecode.program.has_value() || !opt_bytecode.ok ||
+        !opt_bytecode.program.has_value()) {
+      std::cerr << "Bytecode compile error while gathering optimization stats\n";
+      return 1;
+    }
+
+    stats.bytecode_instructions_before = raw_bytecode.program->code.size();
+    stats.bytecode_instructions_after = opt_bytecode.program->code.size();
+
+    std::cout << causis::ir::format_optimization_stats(stats, path) << '\n';
+    return 0;
+  }
+
   std::cout << "=== IR (before) ===\n";
   std::cout << causis::ir::print_ir(*lower_result.program);
   std::cout << "=== IR (optimized) ===\n";
-  std::cout << causis::ir::print_ir(causis::ir::optimize_program(*lower_result.program));
+  std::cout << causis::ir::print_ir(optimized.program);
   return 0;
 }
 
@@ -308,6 +347,15 @@ int main(int argc, char* argv[]) {
     return run_simulation(options);
   }
 
+  if (argc < 3 && command != "optimize") {
+    std::cerr << "causis: usage: causis " << command << " <program.ls>\n";
+    return 1;
+  }
+
+  if (command == "optimize") {
+    return run_optimize(argc, argv);
+  }
+
   if (argc != 3) {
     std::cerr << "causis: usage: causis " << command << " <program.ls>\n";
     return 1;
@@ -327,10 +375,6 @@ int main(int argc, char* argv[]) {
 
   if (command == "ir") {
     return run_ir(argv[2]);
-  }
-
-  if (command == "optimize") {
-    return run_optimize(argv[2]);
   }
 
   if (command == "disassemble") {
