@@ -20,7 +20,12 @@ then
 .\build\causis.exe optimize examples\optimization.ls --stats  (Optimization shown)
 .\build\causis.exe optimize examples\target.ls --stats  (No optimization possible)
 
-if visulaize
+
+if benchmark:
+$env:PATH = "C:\msys64\ucrt64\bin;C:\msys64\usr\bin;" + $env:PATH
+.\build\causis_bench.exe suite --iterations 20
+
+if visulaizition
 
 $env:PATH = "C:\msys64\ucrt64\bin;C:\msys64\usr\bin;" + $env:PATH
 cmake --build build
