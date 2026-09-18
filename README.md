@@ -56,6 +56,8 @@ The project brings together compiler construction and simulation runtime design 
                                     Tick Log / 2D Visualization
 ```
 
+
+
 ## Why causis?
 
 Describing grid-based simulations in a general-purpose language often involves implementation details such as grid management, entity handling, collision checking, and simulation updates.
@@ -77,69 +79,15 @@ At the same time, causis provides a practical domain for exploring the complete 
 - **2D Visualization** — Displays recorded simulation states using HTML and Canvas.
 - **Automated Testing** — Validates compiler and runtime components using GoogleTest and CTest.
 
+
+
 ## Architecture
 
 A causis program is processed end to end through the compiler pipeline, executed by the VM against the simulation runtime, and optionally recorded for visualization.
 
-```
-                              .ls Source File
-
-                                    ↓
-
-                                  Lexer
-
-                                    ↓
-
-                                 Tokens
-
-                                    ↓
-
-                                 Parser
-
-                                    ↓
-
-                            Abstract Syntax Tree
-
-                                    ↓
-
-                          Semantic Analysis
-                         (symbol table, checks)
-
-                                    ↓
-
-                            IR Generation
-                               (lowering)
-
-                                    ↓
-
-                               Optimizer
-                    (constant folding, dead-code elimination)
-
-                                    ↓
-
-                          Bytecode Compiler
-
-                                    ↓
-
-                             Bytecode Module
-
-                                    ↓
-
-                        Stack-based Virtual Machine
-
-                                    ↓
-
-                          Simulation Runtime
-                    (world, robots, targets, obstacles)
-
-                                    ↓
-
-                              Tick Log (JSON)
-
-                                    ↓
-
-                    Static Visualizer (HTML / Canvas)
-```
+<div align="center">
+  <img src="images/image.png" alt="causis architecture" width="500" />
+</div>
 
 ## Language overview
 
@@ -151,12 +99,14 @@ causis v1 is a small DSL for deterministic 2D grid simulations. Full syntax and 
 
 Major constructs at a glance:
 
-| Construct | Example |
-|-----------|---------|
-| **World** | `world 20 20;` |
-| **Robot** | `robot R at 2 2;` |
-| **Obstacle** | `obstacle at 8 5;` |
+
+| Construct    | Example                                         |
+| ------------ | ----------------------------------------------- |
+| **World**    | `world 20 20;`                                  |
+| **Robot**    | `robot R at 2 2;`                               |
+| **Obstacle** | `obstacle at 8 5;`                              |
 | **Behavior** | `behavior R { every tick { move_forward(); } }` |
+
 
 Source files use the `.ls` extension. See [examples/](examples/) for complete programs.
 
@@ -194,15 +144,17 @@ See [examples/path_to_target.ls](examples/path_to_target.ls) for an extended ver
 
 Each stage transforms the program one step closer to executable simulation behavior:
 
-| Stage | Input | Output | Role |
-|-------|-------|--------|------|
-| **Lexer** | Source text (`.ls`) | Token stream | Breaks source into keywords, identifiers, literals, and punctuation. |
-| **Parser** | Tokens | AST | Builds a tree of declarations and statements from the token stream. |
-| **Semantic analysis** | AST | Validated AST | Checks language rules: one world, unique names, in-bounds coordinates, declared-before-use, and type-correct expressions. |
-| **IR generation** | AST | IR module | Lowers high-level constructs (behaviors, control flow, built-in calls) into a simpler intermediate representation. |
-| **Optimizer** | IR module | IR module | Applies constant folding and dead-code elimination to remove redundant work. |
-| **Bytecode compiler** | IR module | Bytecode module | Emits stack-machine instructions and operand data for the VM. |
-| **Virtual machine** | Bytecode module | Runtime effects | Executes instructions each tick, calling into the simulation runtime for movement and queries. |
+
+| Stage                 | Input               | Output          | Role                                                                                                                      |
+| --------------------- | ------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Lexer**             | Source text (`.ls`) | Token stream    | Breaks source into keywords, identifiers, literals, and punctuation.                                                      |
+| **Parser**            | Tokens              | AST             | Builds a tree of declarations and statements from the token stream.                                                       |
+| **Semantic analysis** | AST                 | Validated AST   | Checks language rules: one world, unique names, in-bounds coordinates, declared-before-use, and type-correct expressions. |
+| **IR generation**     | AST                 | IR module       | Lowers high-level constructs (behaviors, control flow, built-in calls) into a simpler intermediate representation.        |
+| **Optimizer**         | IR module           | IR module       | Applies constant folding and dead-code elimination to remove redundant work.                                              |
+| **Bytecode compiler** | IR module           | Bytecode module | Emits stack-machine instructions and operand data for the VM.                                                             |
+| **Virtual machine**   | Bytecode module     | Runtime effects | Executes instructions each tick, calling into the simulation runtime for movement and queries.                            |
+
 
 The CLI exposes individual stages for inspection (`tokenize`, `parse`, `semantic`, `ir`, `optimize`, `disassemble`) and runs the full pipeline with `run`.
 
@@ -243,20 +195,22 @@ For full movement, collision, and built-in operation rules, see [docs/semantics.
 
 v1 provides built-in **actions** (change robot or simulation state) and **queries** (read state). All are valid only inside a robot `behavior` block.
 
-| Operation | Kind | Returns | Description |
-|-----------|------|---------|-------------|
-| `move_up()` | Action | — | Move one cell up (decrease `y`). |
-| `move_down()` | Action | — | Move one cell down (increase `y`). |
-| `move_left()` | Action | — | Move one cell left (decrease `x`). |
-| `move_right()` | Action | — | Move one cell right (increase `x`). |
-| `move_forward()` | Action | — | Move one cell in the robot's current facing direction. |
-| `move_toward(T)` | Action | — | Move one Manhattan step closer to target `T`. |
-| `turn_left()` | Action | — | Rotate the robot 90° counter-clockwise. |
-| `turn_right()` | Action | — | Rotate the robot 90° clockwise. |
-| `stop()` | Action | — | End the current robot's behavior for this tick (skip remaining statements). |
-| `distance_to(T)` | Query | `int` | Manhattan distance from the robot to target `T`. |
-| `obstacle_ahead()` | Query | `bool` | `true` if an obstacle lies directly ahead in the robot's facing direction. |
-| `collision()` | Query | `bool` | `true` if the robot recorded a failed movement during the current tick. |
+
+| Operation          | Kind   | Returns | Description                                                                 |
+| ------------------ | ------ | ------- | --------------------------------------------------------------------------- |
+| `move_up()`        | Action | —       | Move one cell up (decrease `y`).                                            |
+| `move_down()`      | Action | —       | Move one cell down (increase `y`).                                          |
+| `move_left()`      | Action | —       | Move one cell left (decrease `x`).                                          |
+| `move_right()`     | Action | —       | Move one cell right (increase `x`).                                         |
+| `move_forward()`   | Action | —       | Move one cell in the robot's current facing direction.                      |
+| `move_toward(T)`   | Action | —       | Move one Manhattan step closer to target `T`.                               |
+| `turn_left()`      | Action | —       | Rotate the robot 90° counter-clockwise.                                     |
+| `turn_right()`     | Action | —       | Rotate the robot 90° clockwise.                                             |
+| `stop()`           | Action | —       | End the current robot's behavior for this tick (skip remaining statements). |
+| `distance_to(T)`   | Query  | `int`   | Manhattan distance from the robot to target `T`.                            |
+| `obstacle_ahead()` | Query  | `bool`  | `true` if an obstacle lies directly ahead in the robot's facing direction.  |
+| `collision()`      | Query  | `bool`  | `true` if the robot recorded a failed movement during the current tick.     |
+
 
 Failed movement does not change position and sets the robot's collision flag for that tick.
 
@@ -268,15 +222,17 @@ Start with help:
 ./build/causis.exe --help
 ```
 
-| Command | Purpose |
-|---------|---------|
-| `causis tokenize <file.ls>` | Print the token stream |
-| `causis parse <file.ls>` | Print the AST |
-| `causis semantic <file.ls>` | Run semantic analysis only |
-| `causis ir <file.ls>` | Print lowered IR |
-| `causis optimize <file.ls> [--stats]` | Print IR before/after optimization, or `--stats` for instruction counts |
-| `causis disassemble <file.ls>` | Print bytecode disassembly |
-| `causis run <file.ls> [--ticks N] [--log path.json]` | Compile and execute (default: 10 ticks) |
+
+| Command                                              | Purpose                                                                 |
+| ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| `causis tokenize <file.ls>`                          | Print the token stream                                                  |
+| `causis parse <file.ls>`                             | Print the AST                                                           |
+| `causis semantic <file.ls>`                          | Run semantic analysis only                                              |
+| `causis ir <file.ls>`                                | Print lowered IR                                                        |
+| `causis optimize <file.ls> [--stats]`                | Print IR before/after optimization, or `--stats` for instruction counts |
+| `causis disassemble <file.ls>`                       | Print bytecode disassembly                                              |
+| `causis run <file.ls> [--ticks N] [--log path.json]` | Compile and execute (default: 10 ticks)                                 |
+
 
 On Windows PowerShell, use `.\build\causis.exe` instead of `./build/causis.exe`.
 
@@ -295,7 +251,6 @@ The simulation output can be viewed using the static 2D visualizer.
 ![causis 2D visualization](images/starting_point.png)
 ![causis 2D visualization](images/obstacle.png)
 ![causis 2D visualization](images/target.png)
-
 
 ## Project structure
 
@@ -347,16 +302,22 @@ causis/
 └── build/                  # Local build output (created by CMake, not committed)
 ```
 
-| Directory | Role |
-|-----------|------|
-| `docs/` | Authoritative v1 language, grammar, and semantics specifications |
+
+| Directory           | Role                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| `docs/`             | Authoritative v1 language, grammar, and semantics specifications                          |
 | `include/` / `src/` | Compiler pipeline (lexer → parser → semantic → IR → bytecode → VM) and simulation runtime |
-| `examples/` | Small programs demonstrating language features end to end |
-| `tests/` | Stage-level unit tests plus CLI integration tests registered in CMake |
-| `visualizer/` | Decoupled frontend that reads tick-log JSON produced by `causis run --log` |
-| `tools/benchmark/` | Optional `causis_bench` executable for compile-stage and VM throughput measurements |
+| `examples/`         | Small programs demonstrating language features end to end                                 |
+| `tests/`            | Stage-level unit tests plus CLI integration tests registered in CMake                     |
+| `visualizer/`       | Decoupled frontend that reads tick-log JSON produced by `causis run --log`                |
+| `tools/benchmark/`  | Optional `causis_bench` executable for compile-stage and VM throughput measurements       |
+
+
+
 
 ## Build the project
+
+
 
 ### Prerequisites
 
@@ -370,6 +331,8 @@ In the **MSYS2 UCRT64** terminal, install toolchain packages if needed:
 ```sh
 pacman -S --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
 ```
+
+
 
 ### Configure and build
 
@@ -388,6 +351,8 @@ rm -rf build
 cmake -S . -B build -G Ninja
 cmake --build build
 ```
+
+
 
 ### Build from PowerShell (optional)
 
@@ -420,11 +385,13 @@ These are the canonical example programs:
 ./build/causis.exe run examples/target.ls
 ```
 
-| Example | What it demonstrates |
-|---------|----------------------|
-| `basic_move.ls` | Minimal program: one robot moves right every tick on a small grid. |
-| `collision.ls` | Obstacle avoidance: the robot turns when `obstacle_ahead()` is true, otherwise moves forward. |
-| `target.ls` | Goal-directed movement: the robot uses `move_toward(T)` each tick to approach a named target. |
+
+| Example         | What it demonstrates                                                                          |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `basic_move.ls` | Minimal program: one robot moves right every tick on a small grid.                            |
+| `collision.ls`  | Obstacle avoidance: the robot turns when `obstacle_ahead()` is true, otherwise moves forward. |
+| `target.ls`     | Goal-directed movement: the robot uses `move_toward(T)` each tick to approach a named target. |
+
 
 Add `--ticks N` to control simulation length (default is 10). For the full pathfinding demo, see `examples/path_to_target.ls`.
 
@@ -438,17 +405,21 @@ ctest --test-dir build --output-on-failure
 
 This runs GoogleTest unit tests and CMake integration tests that invoke the `causis` CLI against the example programs.
 
-| Category | Location | What is verified |
-|----------|----------|------------------|
-| **Lexer tests** | `tests/lexer/` | Tokenization of keywords, identifiers, literals, and comments |
-| **Parser tests** | `tests/parser/` | AST construction from valid and invalid syntax |
-| **Semantic tests** | `tests/semantic/` | World/entity rules, scopes, types, and built-in call validation |
-| **IR tests** | `tests/ir/` | Lowering from AST to IR |
-| **Optimizer tests** | `tests/ir/optimizer_test.cpp` | Constant folding and dead-code elimination |
-| **Bytecode tests** | `tests/bytecode/` | Instruction emission and disassembly |
-| **VM tests** | `tests/vm/` | Stack-machine execution, tick limits, and `stop()` behavior |
-| **Runtime tests** | `tests/runtime/` | World movement, collisions, program runner, and tick-log export |
+
+| Category              | Location                      | What is verified                                                         |
+| --------------------- | ----------------------------- | ------------------------------------------------------------------------ |
+| **Lexer tests**       | `tests/lexer/`                | Tokenization of keywords, identifiers, literals, and comments            |
+| **Parser tests**      | `tests/parser/`               | AST construction from valid and invalid syntax                           |
+| **Semantic tests**    | `tests/semantic/`             | World/entity rules, scopes, types, and built-in call validation          |
+| **IR tests**          | `tests/ir/`                   | Lowering from AST to IR                                                  |
+| **Optimizer tests**   | `tests/ir/optimizer_test.cpp` | Constant folding and dead-code elimination                               |
+| **Bytecode tests**    | `tests/bytecode/`             | Instruction emission and disassembly                                     |
+| **VM tests**          | `tests/vm/`                   | Stack-machine execution, tick limits, and `stop()` behavior              |
+| **Runtime tests**     | `tests/runtime/`              | World movement, collisions, program runner, and tick-log export          |
 | **Integration tests** | `CMakeLists.txt` (`add_test`) | End-to-end CLI commands on `examples/basic_move.ls` and related programs |
+
+
+
 
 ## Performance
 
@@ -479,12 +450,16 @@ unknown target 'T2'
 
 Error categories:
 
-| Category | Stage | Typical causes |
-|----------|-------|----------------|
-| **Lexical errors** | Lexer | Invalid characters, unterminated tokens |
-| **Syntax errors** | Parser | Missing semicolons, mismatched braces, malformed declarations |
+
+| Category            | Stage             | Typical causes                                                                          |
+| ------------------- | ----------------- | --------------------------------------------------------------------------------------- |
+| **Lexical errors**  | Lexer             | Invalid characters, unterminated tokens                                                 |
+| **Syntax errors**   | Parser            | Missing semicolons, mismatched braces, malformed declarations                           |
 | **Semantic errors** | Semantic analysis | Unknown identifiers, duplicate declarations, out-of-bounds coordinates, type mismatches |
-| **Runtime errors** | VM / runtime | I/O failures, invalid simulation state (rare in v1) |
+| **Runtime errors**  | VM / runtime      | I/O failures, invalid simulation state (rare in v1)                                     |
+
+
+
 
 ## Design decisions / technical highlights
 
@@ -557,11 +532,12 @@ Together, these areas support explaining the project in a viva or technical inte
 
 ## Documentation
 
-| Document | Path | Contents |
-|----------|------|----------|
-| Language specification (v1) | [docs/language.md](docs/language.md) | Syntax, keywords, declarations, expressions, built-ins |
-| Formal grammar | [docs/grammar.md](docs/grammar.md) | Parser grammar for causis v1 |
-| Semantics | [docs/semantics.md](docs/semantics.md) | Runtime rules, movement, ticks, simulation model |
+
+| Document                    | Path                                   | Contents                                               |
+| --------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| Language specification (v1) | [docs/language.md](docs/language.md)   | Syntax, keywords, declarations, expressions, built-ins |
+| Formal grammar              | [docs/grammar.md](docs/grammar.md)     | Parser grammar for causis v1                           |
+| Semantics                   | [docs/semantics.md](docs/semantics.md) | Runtime rules, movement, ticks, simulation model       |
+
 
 The `docs/` directory is the canonical source for v1 syntax and semantics.
-
