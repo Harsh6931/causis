@@ -17,7 +17,8 @@ then
 
 .\build\causis.exe run examples\target.ls
 
-.\build\causis.exe optimize examples\target.ls --stats
+.\build\causis.exe optimize examples\optimization.ls --stats  (Optimization shown)
+.\build\causis.exe optimize examples\target.ls --stats  (No optimization possible)
 
 if visulaize
 
