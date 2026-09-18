@@ -274,7 +274,7 @@ Start with help:
 | `causis parse <file.ls>` | Print the AST |
 | `causis semantic <file.ls>` | Run semantic analysis only |
 | `causis ir <file.ls>` | Print lowered IR |
-| `causis optimize <file.ls>` | Print IR after optimization |
+| `causis optimize <file.ls> [--stats]` | Print IR before/after optimization, or `--stats` for instruction counts |
 | `causis disassemble <file.ls>` | Print bytecode disassembly |
 | `causis run <file.ls> [--ticks N] [--log path.json]` | Compile and execute (default: 10 ticks) |
 
