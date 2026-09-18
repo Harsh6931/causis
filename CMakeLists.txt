@@ -186,6 +186,28 @@ else()
     target_compile_options(causis PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+add_executable(causis_bench
+    tools/benchmark/bench.cpp
+)
+
+target_link_libraries(causis_bench
+    PRIVATE
+        causis_cli
+        causis_vm
+        causis_runtime
+        causis_bytecode
+        causis_ir
+        causis_semantic
+        causis_parser
+        causis_lexer
+)
+
+if(MSVC)
+    target_compile_options(causis_bench PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(causis_bench PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(

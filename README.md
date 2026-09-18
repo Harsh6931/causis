@@ -306,7 +306,9 @@ causis/
 ├── docs/                   # Canonical language specs
 │   ├── language.md
 │   ├── grammar.md
-│   └── semantics.md
+│   ├── semantics.md
+│   ├── optimization-results.md
+│   └── benchmark-results.md
 ├── examples/               # Sample .ls programs
 ├── include/                # Public headers (one subdir per compiler stage)
 │   ├── ast/
@@ -329,6 +331,8 @@ causis/
 │   ├── semantic/
 │   ├── vm/
 │   └── main.cpp            # CLI entry point
+├── tools/
+│   └── benchmark/          # causis_bench (Stage 14 compile/VM timing harness)
 ├── tests/                  # GoogleTest unit tests per stage
 │   ├── bytecode/
 │   ├── cli/
@@ -350,6 +354,7 @@ causis/
 | `examples/` | Small programs demonstrating language features end to end |
 | `tests/` | Stage-level unit tests plus CLI integration tests registered in CMake |
 | `visualizer/` | Decoupled frontend that reads tick-log JSON produced by `causis run --log` |
+| `tools/benchmark/` | Optional `causis_bench` executable for compile-stage and VM throughput measurements |
 
 ## Build the project
 
@@ -445,6 +450,18 @@ This runs GoogleTest unit tests and CMake integration tests that invoke the `cau
 | **Runtime tests** | `tests/runtime/` | World movement, collisions, program runner, and tick-log export |
 | **Integration tests** | `CMakeLists.txt` (`add_test`) | End-to-end CLI commands on `examples/basic_move.ls` and related programs |
 
+## Performance
+
+The `causis_bench` tool (built as `build/causis_bench.exe` on Windows) times each compile stage separately, measures VM ticks per second, and can compare optimized vs raw IR bytecode on the same program.
+
+```sh
+./build/causis_bench.exe suite --iterations 20
+./build/causis_bench.exe compile examples/path_to_target.ls
+./build/causis_bench.exe vm examples/path_to_target.ls --compare-opt
+```
+
+Recorded numbers for this repo’s example programs are in [docs/benchmark-results.md](docs/benchmark-results.md). IR size reductions from the optimizer are in [docs/optimization-results.md](docs/optimization-results.md).
+
 ## Error handling
 
 Compiler and frontend errors are reported with the failing **stage**, a **message**, and **line/column** when available. Richer diagnostics (source line excerpt, caret indicator, and a short explanation) are a future improvement.
@@ -522,7 +539,6 @@ Not implemented in the current release:
 - BFS/A* pathfinding builtins or library
 - Richer visualization (styling, animation, multiple robots highlighted)
 - Additional IR optimizations (unreachable-behavior elimination, bounds checks)
-- Performance benchmarking and profiling tools
 - Larger-world stress scenarios and scalability experiments
 
 These remain stretch goals rather than committed milestones.
